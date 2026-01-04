@@ -1,0 +1,17 @@
+{
+  "name": "geo-nodes-xyz",
+  "version": "1.0.0",
+  "description": "Geo Nodes XYZ project",
+  "main": "index.html",
+  "scripts": {
+    "dev": "wrangler pages dev",
+    "deploy": "wrangler pages deploy"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^3.78.0"
+  }
+}
+
