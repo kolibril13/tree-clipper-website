@@ -6,16 +6,36 @@
     <title>Asset 1 - Geo Nodes XYZ</title>
     <link rel="stylesheet" href="styles.css">
     <style>
+        .asset-layout {
+            display: flex;
+            gap: 2em;
+            align-items: flex-start;
+            margin-bottom: 1em;
+        }
         .asset-img {
-            max-width: 100%;
-            max-height: 180px;
+            max-width: 300px;
+            max-height: 250px;
             display: block;
-            margin: 0 auto 1em auto;
             box-sizing: border-box;
+            flex-shrink: 0;
+            object-fit: contain;
         }
         .copy-asset {
-            /* Ensure the container does not overflow */
+            flex: 1;
+            min-width: 0;
             overflow: auto;
+        }
+        .copy-asset p {
+            margin: 0 0 0.5em 0;
+        }
+        @media (max-width: 700px) {
+            .asset-layout {
+                flex-direction: column;
+            }
+            .asset-img {
+                max-width: 100%;
+                margin: 0 auto;
+            }
         }
     </style>
 </head>
@@ -23,12 +43,13 @@
     <a href="index.html" class="back-button">←</a>
     <h1>Asset 1</h1>
     
-    <img src="asset1_img.png" alt="Asset 1" class="asset-img">
-    
-    <div class="copy-asset">
-        <p>Asset data:</p>
-        <pre id="asset-data" data-asset-id="asset-1">abc</pre>
-        <button id="copy-button" class="copy-button" onclick="copyAssetData()">Copy</button>
+    <div class="asset-layout">
+        <img src="asset1_img.png" alt="Asset 1" class="asset-img">
+        <div class="copy-asset">
+            <p>Asset data:</p>
+            <pre id="asset-data" data-asset-id="asset-1">abc</pre>
+            <button id="copy-button" class="copy-button" onclick="copyAssetData()">Copy</button>
+        </div>
     </div>
     <script src="copy-asset.js"></script>
 </body>
