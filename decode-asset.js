@@ -36,20 +36,64 @@ function getTreeClipperData() {
     return arr[1];
 }
 
+// Returns the unique node names used in the object (across all node_trees)
+function getNodeNames(data) {
+    const names = [];
+
+    const trees = Array.isArray(data?.node_trees) ? data.node_trees : [];
+    for (const tree of trees) {
+        const items = tree?.data?.nodes?.data?.items;
+        if (!Array.isArray(items)) continue;
+
+        for (const node of items) {
+            const name = node?.data?.name;
+            if (typeof name === "string" && name.trim()) names.push(name.trim());
+        }
+    }
+
+    return [...new Set(names)];
+}
+
 // Async show function due to ungzip
 async function showDecodedAsset() {
     const b64 = getTreeClipperData();
+    const statsEl = document.getElementById('node-stats');
+    const decodedEl = document.getElementById('decoded-asset');
+    
     if (!b64) {
-        document.getElementById('decoded-asset').textContent = "Could not find TreeClipper asset data.";
+        if (decodedEl) decodedEl.textContent = "Could not find TreeClipper asset data.";
+        if (statsEl) statsEl.innerHTML = "<p>Could not find TreeClipper asset data.</p>";
         return;
     }
     try {
         const bytes = base64ToUint8Array(b64);
         const json = await ungzip(bytes);
         const obj = JSON.parse(json);
-        document.getElementById('decoded-asset').textContent = JSON.stringify(obj, null, 2);
+        
+        // Display node stats
+        const nodeNames = getNodeNames(obj);
+        if (statsEl) {
+            if (nodeNames.length === 0) {
+                statsEl.innerHTML = `
+                    <p><strong>Node Statistics:</strong></p>
+                    <p>No nodes found in the asset data.</p>
+                `;
+            } else {
+                statsEl.innerHTML = `
+                    <p><strong>Node Statistics:</strong></p>
+                    <p>Total unique nodes: <strong>${nodeNames.length}</strong></p>
+                    <p>Nodes used:</p>
+                    <ul style="margin-top: 0.5em; padding-left: 1.5em;">
+                        ${nodeNames.map(name => `<li>${name}</li>`).join('')}
+                    </ul>
+                `;
+            }
+        }
+        
+        if (decodedEl) decodedEl.textContent = JSON.stringify(obj, null, 2);
     } catch (e) {
-        document.getElementById('decoded-asset').textContent = "Failed to decode asset: " + e;
+        if (decodedEl) decodedEl.textContent = "Failed to decode asset: " + e;
+        if (statsEl) statsEl.innerHTML = `<p>Failed to load node statistics: ${e}</p>`;
     }
 }
 // Load and then decode (async/await version)
