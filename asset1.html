@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asset 1 - Geo Nodes XYZ</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="copy-asset.js"></script>
+    <script src="decode-asset.js"></script>
 </head>
 <body>
     <a href="index.html" class="back-button">←</a>
@@ -33,7 +35,17 @@
         <div id="asset-additional"></div>
     </div>
 
-    <script src="copy-asset.js"></script>
+    <div class="asset-info">
+        <h2>Node Statistics</h2>
+        <div id="node-stats"><p>Loading...</p></div>
+    </div>
+
+    <div class="asset-info">
+        <h2>Decoded Asset Data</h2>
+        <pre id="decoded-asset" style="max-height: 400px; overflow: auto;">Loading...</pre>
+    </div>
+
+
     <script>
         async function loadAssetData() {
             try {
@@ -84,6 +96,9 @@
                 }
 
                 document.title = `${data.title} - Geo Nodes XYZ`;
+
+                // Now decode and display the asset data
+                decodeAndDisplayAsset();
             } catch (error) {
                 console.error('Failed to load asset data:', error);
             }

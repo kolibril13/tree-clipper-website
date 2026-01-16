@@ -27,9 +27,8 @@ async function ungzip(bytes) {
     return dec.decode(decompressed);
 }
 
-function getTreeClipperData() {
-    const el = document.getElementById('asset-data');
-    let raw = el.textContent.trim();
+function getTreeClipperData(assetDataEl) {
+    let raw = assetDataEl.textContent.trim();
     if (!raw.startsWith('TreeClipper::')) return null;
     let arr = raw.split('::');
     if (arr.length !== 2) return null;
@@ -55,10 +54,8 @@ function getNodeNames(data) {
 }
 
 // Async show function due to ungzip
-async function showDecodedAsset() {
-    const b64 = getTreeClipperData();
-    const statsEl = document.getElementById('node-stats');
-    const decodedEl = document.getElementById('decoded-asset');
+async function showDecodedAsset(assetDataEl, statsEl, decodedEl) {
+    const b64 = getTreeClipperData(assetDataEl);
     
     if (!b64) {
         if (decodedEl) decodedEl.textContent = "Could not find TreeClipper asset data.";
@@ -96,7 +93,10 @@ async function showDecodedAsset() {
         if (statsEl) statsEl.innerHTML = `<p>Failed to load node statistics: ${e}</p>`;
     }
 }
-// Load and then decode (async/await version)
-window.addEventListener('DOMContentLoaded', function() {
-    showDecodedAsset();
-});
+// Exported function to be called after asset data is loaded
+function decodeAndDisplayAsset() {
+    const assetDataEl = document.getElementById('asset-data');
+    const statsEl = document.getElementById('node-stats');
+    const decodedEl = document.getElementById('decoded-asset');
+    showDecodedAsset(assetDataEl, statsEl, decodedEl);
+}
