@@ -138,3 +138,46 @@ pre {
 .copy-button.copied {
     background: #28a745;
 }
+
+.asset-meta {
+    margin-bottom: 1.5em;
+    padding: 0.75em 1em;
+    background: #f0f4f8;
+    border-radius: 6px;
+    font-size: 0.9em;
+    color: #555;
+}
+
+.asset-meta p {
+    margin: 0.25em 0;
+}
+
+.asset-info {
+    margin-top: 1.5em;
+    padding-top: 1em;
+    border-top: 1px solid #e0e0e0;
+}
+
+.asset-info h2 {
+    font-size: 1.1em;
+    font-weight: 600;
+    margin: 0 0 0.5em 0;
+    color: #333;
+}
+
+.asset-info p {
+    margin: 0 0 0.75em 0;
+    line-height: 1.5;
+}
+
+.additional-info {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.additional-info li {
+    margin: 0.3em 0;
+}
