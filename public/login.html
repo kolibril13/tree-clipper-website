@@ -6,13 +6,21 @@
 
   const supabase = createClient(
     "https://msgozdhtfawuadxerkxq.supabase.co",
-    "sb_publishable_wnNxDxsZA_SazdahnpMiIg__zR2QQvv"
+    "sb_publishable_wnNxDxsZA_SazdahnpMiIg__zR2QQvv",
+    {
+      auth: {
+        flowType: "pkce",
+        detectSessionInUrl: true,
+      },
+    }
   );
 
   async function checkAuth() {
     const { data: { user } } = await supabase.auth.getUser();
+
     if (user) {
-      document.getElementById("status").textContent = `Logged in as ${user.email || user.user_metadata?.name || "Discord User"}`;
+      document.getElementById("status").textContent =
+        `Logged in as ${user.email ?? user.user_metadata?.full_name ?? "Discord user"}`;
       document.getElementById("login").style.display = "none";
     } else {
       document.getElementById("status").textContent = "Not logged in.";
@@ -24,23 +32,12 @@
     await supabase.auth.signInWithOAuth({
       provider: "discord",
       options: {
-        // Use the correct callback URI as registered with Discord/Supabase
-        redirectTo: "https://geo-nodes.xyz/auth/callback",
+        redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
   };
 
-  // When the page loads, check for OAuth hash and process session
   window.addEventListener("DOMContentLoaded", async () => {
-    // Handle OAuth redirect
-    const hash = window.location.hash;
-    if (hash && hash.includes("access_token")) {
-      // Supabase will automatically handle the session in local storage
-      // By initiating getSession/getUser it finishes the process
-      await supabase.auth.getSession();
-      // Remove hash for tidiness
-      window.location.hash = "";
-    }
-    checkAuth();
+    await checkAuth();
   });
 </script>
