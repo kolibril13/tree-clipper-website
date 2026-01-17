@@ -1,11 +1,8 @@
 {
   "name": "geo-nodes-xyz",
   "compatibility_date": "2026-01-04",
+  "main": "src/index.js",
   "assets": {
     "directory": "./public"
   }
 }
-
-
-
-
