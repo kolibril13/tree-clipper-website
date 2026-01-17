@@ -1,44 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Worker - Geo Nodes XYZ</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Worker – Geo Nodes XYZ</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <div class="login-corner"></div>
-    <a href="index.html" class="back-button">←</a>
-    <h1>Worker</h1>
-    
-    <input id="country-input" placeholder="Country name" />
-    <button id="submit-btn">Add country</button>
+  <div class="login-corner"></div>
+  <a href="index.html" class="back-button">←</a>
 
-    <pre id="output">Loading…</pre>
+  <h1>Worker</h1>
 
-<script>
-  // load data
-  fetch("/api/countries")
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById("output").textContent =
-        JSON.stringify(data, null, 2);
-    });
+  <textarea
+    id="content-input"
+    placeholder="Write something…"
+    rows="6"
+    style="width: 100%; max-width: 600px;"
+  ></textarea>
 
-  // write data
-  document.getElementById("submit-btn").onclick = async () => {
-    const name = document.getElementById("country-input").value;
+  <br /><br />
 
-    const res = await fetch("/api/countries", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name })
-    });
+  <button id="submit-btn">Submit</button>
 
-    const text = await res.text();
-    document.getElementById("output").textContent = text;
-  };
-</script>
-    <script type="module" src="auth.js"></script>
+  <pre id="output">Loading…</pre>
+
+  <script type="module">
+    import { supabase } from "./auth.js";
+
+    const output = document.getElementById("output");
+    const submitBtn = document.getElementById("submit-btn");
+    const input = document.getElementById("content-input");
+
+    // ---------- READ (public) ----------
+    async function loadEntries() {
+      const res = await fetch("/api/entries");
+      const data = await res.json();
+      output.textContent = JSON.stringify(data, null, 2);
+    }
+
+    loadEntries();
+
+    // ---------- WRITE (authenticated) ----------
+    submitBtn.onclick = async () => {
+      const content = input.value.trim();
+      if (!content) return;
+
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        output.textContent = "Please log in to submit.";
+        return;
+      }
+
+      const res = await fetch("/api/entries", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ content })
+      });
+
+      const text = await res.text();
+      output.textContent = text;
+
+      if (res.ok) {
+        input.value = "";
+        loadEntries();
+      }
+    };
+  </script>
+
+  <!-- Auth UI / session handling -->
+  <script type="module" src="auth.js"></script>
 </body>
 </html>
