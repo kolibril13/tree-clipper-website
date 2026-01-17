@@ -4,5 +4,11 @@
   "main": "src/index.js",
   "assets": {
     "directory": "./public"
+  },
+  "observability": {
+    "logs": {
+      "enabled": false,
+      "invocation_logs": true
+    }
   }
 }
