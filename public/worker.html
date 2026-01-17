@@ -1,15 +1,19 @@
 <p id="status">Loading…</p>
+<ul id="countries"></ul>
 
 <script>
 async function loadCountries() {
   try {
     const res = await fetch("/api/countries");
     if (!res.ok) throw new Error("API error");
+
     const data = await res.json();
 
     document.getElementById("status").textContent = "";
 
     const ul = document.getElementById("countries");
+    ul.innerHTML = "";
+
     for (const c of data) {
       const li = document.createElement("li");
       li.textContent = c.name;
@@ -17,7 +21,9 @@ async function loadCountries() {
     }
   } catch (e) {
     document.getElementById("status").textContent = "Failed to load data";
+    console.error(e);
   }
 }
+
 loadCountries();
 </script>
