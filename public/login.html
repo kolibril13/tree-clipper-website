@@ -1,61 +1,16 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Login</title>
-  </head>
-
-  <body>
-    <button id="login">Login with Discord</button>
-    <div id="status"></div>
-
-    <script type="module">
-      import { createClient } from "https://esm.sh/@supabase/supabase-js";
-
-      const supabase = createClient(
-        "https://msgozdhtfawuadxerkxq.supabase.co",
-        "sb_publishable_wnNxDxsZA_SazdahnpMiIg__zR2QQvv",
-        {
-          auth: {
-            flowType: "pkce",
-            detectSessionInUrl: true,
-          },
-        }
-      );
-
-      async function checkAuth() {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        const statusEl = document.getElementById("status");
-        const loginBtn = document.getElementById("login");
-
-        if (user) {
-          statusEl.textContent = `Logged in as ${
-            user.email ??
-            user.user_metadata?.full_name ??
-            "Discord user"
-          }`;
-          loginBtn.style.display = "none";
-        } else {
-          statusEl.textContent = "Not logged in.";
-          loginBtn.style.display = "";
-        }
-      }
-
-      document.getElementById("login").addEventListener("click", async () => {
-        await supabase.auth.signInWithOAuth({
-          provider: "discord",
-          options: {
-            redirectTo: `${window.location.origin}/auth/callback`,
-          },
-        });
-      });
-
-      window.addEventListener("DOMContentLoaded", () => {
-        checkAuth();
-      });
-    </script>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Geo Nodes XYZ</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="login-corner"></div>
+    <a href="index.html" class="back-button">←</a>
+    <h1>Login</h1>
+    <p>Use the login button in the top left corner to sign in with Discord.</p>
+    <script type="module" src="auth.js"></script>
+</body>
 </html>

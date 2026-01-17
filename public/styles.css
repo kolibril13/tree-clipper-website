@@ -5,21 +5,73 @@ body {
     max-width: 480px;
     margin: 40px auto;
     padding: 2em;
+    padding-top: 3em;
     border-radius: 8px;
     box-shadow: 0 2px 12px #0001;
     position: relative;
 }
 
+/* Login corner component */
+.login-corner {
+    position: absolute;
+    top: 0.6em;
+    left: 1em;
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    font-size: 0.85em;
+    z-index: 10;
+}
+
+.login-corner .login-status {
+    color: #666;
+}
+
+.login-corner .login-btn {
+    padding: 0.3em 0.7em;
+    background: #5865F2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.login-corner .login-btn:hover {
+    background: #4752C4;
+    text-decoration: none;
+}
+
+.login-corner .logout-btn {
+    padding: 0.3em 0.7em;
+    background: transparent;
+    color: #888;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: all 0.2s ease;
+}
+
+.login-corner .logout-btn:hover {
+    background: #f5f5f5;
+    border-color: #ccc;
+}
+
 .back-button {
     position: absolute;
-    top: 0.2em;
-    left: 1em;
-    font-size: 1.5em;
+    top: 0.6em;
+    right: 1em;
+    font-size: 1.3em;
     color: #2072cc;
     text-decoration: none;
     display: inline-block;
     line-height: 1;
-    padding: 0.3em 0.5em 0.3em 0;
+    padding: 0.3em 0.5em;
     border-radius: 4px;
     transition: background-color 0.2s;
     background: none;
@@ -27,8 +79,8 @@ body {
 }
 @media (max-width: 530px) {
     .back-button {
-        left: 0.5em;
-        top: 0.2em;
+        right: 0.5em;
+        top: 0.6em;
     }
 }
 .back-button:hover {
