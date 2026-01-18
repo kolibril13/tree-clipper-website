@@ -610,3 +610,42 @@ pre {
         transform: translateY(-8px);
     }
 }
+
+/* Footer */
+.site-footer {
+    margin-top: 2em;
+    padding-top: 1em;
+    border-top: 1px solid #e5e7eb;
+    font-size: 0.85em;
+    color: #9ca3af;
+    text-align: center;
+}
+
+.site-footer a {
+    color: #6b7280;
+}
+
+.site-footer a:hover {
+    color: #2072cc;
+}
+
+/* Legal Pages */
+.legal-content {
+    line-height: 1.7;
+}
+
+.legal-content h2 {
+    font-size: 1.1em;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    color: #374151;
+}
+
+.legal-content ul {
+    padding-left: 1.2em;
+    list-style: disc;
+}
+
+.legal-content li {
+    margin-bottom: 0.3em;
+}
