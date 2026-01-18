@@ -123,6 +123,78 @@ a:hover {
     text-decoration: underline;
 }
 
+/* Assets List */
+.assets-list {
+    margin: 0 0 0.5em 0;
+}
+
+.assets-list li {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #fff;
+    transition: all 0.2s ease;
+}
+
+.assets-list li:hover {
+    border-color: #2072cc;
+    box-shadow: 0 2px 8px rgba(32, 114, 204, 0.1);
+}
+
+.assets-list li a {
+    display: flex;
+    flex-direction: column;
+    padding: 0.9em 1.1em;
+    text-decoration: none;
+    gap: 0.25em;
+}
+
+.assets-list li a:hover {
+    text-decoration: none;
+}
+
+.assets-list .asset-title {
+    font-weight: 600;
+    font-size: 1.05em;
+    color: #232323;
+}
+
+.assets-list li:hover .asset-title {
+    color: #2072cc;
+}
+
+.assets-list .asset-author {
+    font-size: 0.85em;
+    color: #6b7280;
+}
+
+.assets-list .loading-item,
+.assets-list .empty-item,
+.assets-list .error-item {
+    padding: 1.2em;
+    text-align: center;
+    color: #6b7280;
+    font-size: 0.95em;
+    background: #f9fafb;
+}
+
+.assets-list .error-item {
+    color: #dc2626;
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+/* Asset Meta (on detail page) */
+.asset-meta {
+    color: #6b7280;
+    font-size: 0.95em;
+    margin-top: -0.5em;
+    margin-bottom: 1.5em;
+}
+
+.asset-meta strong {
+    color: #374151;
+}
+
 /* Upload Button (homepage) */
 .upload-btn {
     display: inline-flex;

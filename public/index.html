@@ -9,18 +9,57 @@
 <body>
     <div class="login-corner"></div>
     <h1>Geo Nodes XYZ</h1>
-    <ul>
-        <li><a href="asset1.html">Asset 1</a></li>
-        <li><a href="asset2.html">Asset 2</a></li>
-        <li><a href="asset3.html">Asset 3</a></li>
-        <li><a href="asset4.html">Asset 4</a></li>
-        <li><a href="asset5.html">Asset 5</a></li>
+    
+    <ul id="assets-list" class="assets-list">
+        <li class="loading-item">Loading assets...</li>
     </ul>
 
     <a href="upload-asset.html" class="upload-btn">+ Upload Asset</a>
 
     <div style="height: 16px;"></div>
     <div class="prototype-warning">⚠️ Early Prototype. Work in progress. All data will be deleted every few hours.</div>
+    
+    <script type="module">
+        async function loadAssets() {
+            const listEl = document.getElementById("assets-list");
+            
+            try {
+                const res = await fetch("/api/entries");
+                const entries = await res.json();
+                
+                if (!entries || entries.length === 0) {
+                    listEl.innerHTML = '<li class="empty-item">No assets yet. Be the first to upload!</li>';
+                    return;
+                }
+                
+                listEl.innerHTML = entries.map(entry => {
+                    const title = entry.title || "Untitled Asset";
+                    const author = entry.author || "Unknown";
+                    return `
+                        <li>
+                            <a href="asset.html?id=${encodeURIComponent(entry.asset_id)}">
+                                <span class="asset-title">${escapeHtml(title)}</span>
+                                <span class="asset-author">by ${escapeHtml(author)}</span>
+                            </a>
+                        </li>
+                    `;
+                }).join('');
+                
+            } catch (err) {
+                console.error("Failed to load assets:", err);
+                listEl.innerHTML = '<li class="error-item">Failed to load assets. Please try again later.</li>';
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        loadAssets();
+    </script>
+    
     <script type="module" src="auth.js"></script>
 </body>
 </html>
