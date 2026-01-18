@@ -329,25 +329,69 @@ pre {
 }
 
 /* Submit Button */
-#submit-btn {
-    padding: 0.8em 1.5em;
-    background: #2072cc;
+#submit-btn,
+.asset-form button[type="submit"] {
+    position: relative;
+    padding: 0.9em 2em;
+    background: linear-gradient(135deg, #2072cc 0%, #1a5da8 100%);
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 1em;
+    font-size: 1.05em;
     font-weight: 600;
-    transition: all 0.2s ease;
-    margin-top: 0.5em;
+    letter-spacing: 0.02em;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-top: 0.8em;
+    overflow: hidden;
+    box-shadow: 
+        0 2px 4px rgba(32, 114, 204, 0.2),
+        0 4px 12px rgba(32, 114, 204, 0.15);
 }
 
-#submit-btn:hover {
-    background: #185ba0;
-    transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(32, 114, 204, 0.25);
+#submit-btn::before,
+.asset-form button[type="submit"]::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    transition: left 0.5s ease;
 }
 
-#submit-btn:active {
+#submit-btn:hover,
+.asset-form button[type="submit"]:hover {
+    background: linear-gradient(135deg, #1a5da8 0%, #144a87 100%);
+    transform: translateY(-2px);
+    box-shadow: 
+        0 4px 8px rgba(32, 114, 204, 0.25),
+        0 8px 24px rgba(32, 114, 204, 0.2);
+}
+
+#submit-btn:hover::before,
+.asset-form button[type="submit"]:hover::before {
+    left: 100%;
+}
+
+#submit-btn:active,
+.asset-form button[type="submit"]:active {
     transform: translateY(0);
+    box-shadow: 
+        0 1px 2px rgba(32, 114, 204, 0.2),
+        0 2px 8px rgba(32, 114, 204, 0.15);
+}
+
+#submit-btn:focus-visible,
+.asset-form button[type="submit"]:focus-visible {
+    outline: none;
+    box-shadow: 
+        0 0 0 3px rgba(32, 114, 204, 0.4),
+        0 4px 12px rgba(32, 114, 204, 0.2);
 }
