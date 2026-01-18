@@ -46,9 +46,10 @@ export default {
       const assetId = `asset-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
       const author =
+        userData.user.user_metadata?.custom_claims?.global_name ||
         userData.user.user_metadata?.full_name ||
         userData.user.user_metadata?.name ||
-        userData.user.email;
+        "Discord user";
 
       const { error } = await supabase
         .from("entries")

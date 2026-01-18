@@ -17,8 +17,9 @@ function renderLoginCorner(user) {
 
   if (user) {
     const displayName =
-      user.email ??
+      user.user_metadata?.custom_claims?.global_name ??
       user.user_metadata?.full_name ??
+      user.user_metadata?.name ??
       "Discord user";
     corner.innerHTML = '';
     corner.insertAdjacentHTML(
