@@ -110,6 +110,38 @@ a:hover {
     text-decoration: underline;
 }
 
+/* Upload Button (homepage) */
+.upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    margin-top: 1.5em;
+    padding: 0.7em 1.4em;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 0.95em;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+        0 2px 4px rgba(16, 185, 129, 0.2),
+        0 4px 12px rgba(16, 185, 129, 0.15);
+}
+
+.upload-btn:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-2px);
+    box-shadow: 
+        0 4px 8px rgba(16, 185, 129, 0.25),
+        0 8px 20px rgba(16, 185, 129, 0.2);
+    text-decoration: none;
+}
+
+.upload-btn:active {
+    transform: translateY(0);
+}
+
 .asset-data-container {
     margin-top: 0.5em;
 }
@@ -394,4 +426,87 @@ pre {
     box-shadow: 
         0 0 0 3px rgba(32, 114, 204, 0.4),
         0 4px 12px rgba(32, 114, 204, 0.2);
+}
+
+/* Status Messages */
+.status-message {
+    display: none;
+    align-items: center;
+    gap: 0.6em;
+    padding: 1em 1.2em;
+    border-radius: 8px;
+    font-family: system-ui, sans-serif;
+    font-size: 0.95em;
+    font-weight: 500;
+    margin-top: 1em;
+    animation: slideIn 0.3s ease-out;
+}
+
+.status-message.visible {
+    display: flex;
+}
+
+.status-message.success {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border: 1px solid #6ee7b7;
+    color: #065f46;
+}
+
+.status-message.error {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border: 1px solid #fca5a5;
+    color: #991b1b;
+}
+
+.status-message.info {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1px solid #93c5fd;
+    color: #1e40af;
+}
+
+.status-message .status-icon {
+    font-size: 1.3em;
+    line-height: 1;
+}
+
+.status-message .status-text {
+    flex: 1;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Celebrate animation for success */
+.status-message.success .status-icon {
+    animation: celebrate 0.5s ease-out;
+}
+
+@keyframes celebrate {
+    0% { transform: scale(0.5) rotate(-10deg); }
+    50% { transform: scale(1.2) rotate(5deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+/* Fade out animation */
+.status-message.fade-out {
+    animation: fadeOut 0.4s ease-out forwards;
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
 }

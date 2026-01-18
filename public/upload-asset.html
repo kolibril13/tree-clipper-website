@@ -49,13 +49,36 @@
     <button type="submit">Submit Asset</button>
   </form>
 
-  <pre id="output"></pre>
+  <div id="output" class="status-message">
+    <span class="status-icon"></span>
+    <span class="status-text"></span>
+  </div>
 
   <script type="module">
     import { supabase } from "./auth.js";
 
     const form = document.getElementById("asset-form");
     const output = document.getElementById("output");
+    const statusIcon = output.querySelector(".status-icon");
+    const statusText = output.querySelector(".status-text");
+
+    let statusTimeout;
+
+    function showStatus(type, message) {
+      clearTimeout(statusTimeout);
+      output.classList.remove("fade-out");
+      output.className = "status-message visible " + type;
+      statusIcon.textContent = type === "success" ? "✓" : type === "error" ? "✕" : "ℹ";
+      statusText.textContent = message;
+      
+      // Auto fade out after 1 second
+      statusTimeout = setTimeout(() => {
+        output.classList.add("fade-out");
+        setTimeout(() => {
+          output.classList.remove("visible", "fade-out");
+        }, 400);
+      }, 1000);
+    }
 
     const imageDropzone = document.getElementById("image-dropzone");
     const imageInput = document.getElementById("image-input");
@@ -108,7 +131,7 @@
 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        output.textContent = "Please log in.";
+        showStatus("error", "Please log in to upload assets.");
         return;
       }
 
@@ -123,7 +146,7 @@
           .upload(filePath, selectedImageFile);
 
         if (error) {
-          output.textContent = "Image upload failed: " + error.message;
+          showStatus("error", "Image upload failed: " + error.message);
           return;
         }
 
@@ -149,13 +172,13 @@
       });
 
       if (res.ok) {
-        output.textContent = "✅ Upload complete!";
+        showStatus("success", "Upload complete!");
         form.reset();
         selectedImageFile = null;
         imagePreview.src = "";
         imageDropzone.classList.remove("has-image");
       } else {
-        output.textContent = await res.text();
+        showStatus("error", await res.text());
       }
     };
   </script>
