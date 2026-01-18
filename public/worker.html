@@ -42,11 +42,11 @@
           <span class="dropzone-text">Drag & drop an image here<br />or click to select</span>
         </div>
         <img id="image-preview" class="image-preview" alt="Preview" />
-        <button type="button" id="remove-image" class="remove-image" title="Remove image">×</button>
+        <button type="button" id="remove-image" class="remove-image">×</button>
       </div>
     </div>
 
-    <button type="submit" id="submit-btn">Submit Asset</button>
+    <button type="submit">Submit Asset</button>
   </form>
 
   <pre id="output">Loading existing entries…</pre>
@@ -54,92 +54,97 @@
   <script type="module">
     import { supabase } from "./auth.js";
 
-    const output = document.getElementById("output");
     const form = document.getElementById("asset-form");
+    const output = document.getElementById("output");
+
     const imageDropzone = document.getElementById("image-dropzone");
     const imageInput = document.getElementById("image-input");
     const imagePreview = document.getElementById("image-preview");
     const removeImageBtn = document.getElementById("remove-image");
 
-    let imageDataUrl = null;
+    let selectedImageFile = null;
 
-    // ---------- IMAGE DRAG & DROP ----------
-    imageDropzone.addEventListener("click", (e) => {
-      if (e.target !== removeImageBtn) {
-        imageInput.click();
-      }
-    });
+    // ---------------- IMAGE UI ----------------
+    imageDropzone.addEventListener("click", () => imageInput.click());
 
-    imageDropzone.addEventListener("dragover", (e) => {
+    imageDropzone.addEventListener("dragover", e => {
       e.preventDefault();
       imageDropzone.classList.add("dragover");
     });
 
-    imageDropzone.addEventListener("dragleave", () => {
-      imageDropzone.classList.remove("dragover");
-    });
+    imageDropzone.addEventListener("dragleave", () =>
+      imageDropzone.classList.remove("dragover")
+    );
 
-    imageDropzone.addEventListener("drop", (e) => {
+    imageDropzone.addEventListener("drop", e => {
       e.preventDefault();
       imageDropzone.classList.remove("dragover");
       const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith("image/")) {
-        handleImageFile(file);
-      }
+      if (file?.type.startsWith("image/")) setImage(file);
     });
 
-    imageInput.addEventListener("change", (e) => {
+    imageInput.addEventListener("change", e => {
       const file = e.target.files[0];
-      if (file) {
-        handleImageFile(file);
-      }
+      if (file) setImage(file);
     });
 
-    function handleImageFile(file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        imageDataUrl = e.target.result;
-        imagePreview.src = imageDataUrl;
-        imageDropzone.classList.add("has-image");
-      };
-      reader.readAsDataURL(file);
+    function setImage(file) {
+      selectedImageFile = file;
+      imagePreview.src = URL.createObjectURL(file);
+      imageDropzone.classList.add("has-image");
     }
 
-    removeImageBtn.addEventListener("click", (e) => {
+    removeImageBtn.addEventListener("click", e => {
       e.stopPropagation();
-      imageDataUrl = null;
-      imagePreview.src = "";
+      selectedImageFile = null;
       imageInput.value = "";
+      imagePreview.src = "";
       imageDropzone.classList.remove("has-image");
     });
 
-    // ---------- READ (public) ----------
+    // ---------------- READ ----------------
     async function loadEntries() {
       const res = await fetch("/api/entries");
-      const data = await res.json();
-      output.textContent = JSON.stringify(data, null, 2);
+      output.textContent = JSON.stringify(await res.json(), null, 2);
     }
 
     loadEntries();
 
-    // ---------- WRITE (authenticated) ----------
-    form.onsubmit = async (e) => {
+    // ---------------- WRITE ----------------
+    form.onsubmit = async e => {
       e.preventDefault();
 
-      const {
-        data: { session }
-      } = await supabase.auth.getSession();
-
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        output.textContent = "Please log in to submit.";
+        output.textContent = "Please log in.";
         return;
       }
 
-      const assetPayload = {
+      let imageUrl = null;
+
+      if (selectedImageFile) {
+        const ext = selectedImageFile.name.split(".").pop();
+        const filePath = `${session.user.id}/asset-${Date.now()}.${ext}`;
+
+        const { error } = await supabase.storage
+          .from("asset-images")
+          .upload(filePath, selectedImageFile);
+
+        if (error) {
+          output.textContent = "Image upload failed: " + error.message;
+          return;
+        }
+
+        imageUrl = supabase.storage
+          .from("asset-images")
+          .getPublicUrl(filePath).data.publicUrl;
+      }
+
+      const payload = {
         assetData: document.getElementById("asset-data").value.trim(),
         title: document.getElementById("title").value.trim() || null,
-        imageData: imageDataUrl || null,
-        description: document.getElementById("description").value.trim() || null
+        description: document.getElementById("description").value.trim() || null,
+        imageData: imageUrl
       };
 
       const res = await fetch("/api/entries", {
@@ -148,15 +153,14 @@
           "Content-Type": "application/json",
           "Authorization": `Bearer ${session.access_token}`
         },
-        body: JSON.stringify(assetPayload)
+        body: JSON.stringify(payload)
       });
 
-      const text = await res.text();
-      output.textContent = text;
+      output.textContent = await res.text();
 
       if (res.ok) {
         form.reset();
-        imageDataUrl = null;
+        selectedImageFile = null;
         imagePreview.src = "";
         imageDropzone.classList.remove("has-image");
         loadEntries();
@@ -164,7 +168,6 @@
     };
   </script>
 
-  <!-- Auth UI / session handling -->
   <script type="module" src="auth.js"></script>
 </body>
 </html>
