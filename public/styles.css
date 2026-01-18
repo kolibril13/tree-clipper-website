@@ -195,6 +195,11 @@ a:hover {
     color: #374151;
 }
 
+.asset-meta .date-info {
+    font-size: 0.9em;
+    color: #9ca3af;
+}
+
 /* Upload Button (homepage) */
 .upload-btn {
     display: inline-flex;

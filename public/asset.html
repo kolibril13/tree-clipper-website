@@ -52,7 +52,21 @@
                     const metaEl = document.getElementById("asset-meta");
                     const author = asset.author || "Unknown";
                     const description = asset.description || "";
-                    metaEl.innerHTML = `by <strong>${escapeHtml(author)}</strong>${description ? ' — ' + escapeHtml(description) : ''}`;
+                    
+                    // Format dates
+                    const createdDate = asset.creation_date ? formatDate(asset.creation_date) : null;
+                    const updatedDate = asset.last_update ? formatDate(asset.last_update) : null;
+                    
+                    let metaHtml = `by <strong>${escapeHtml(author)}</strong>`;
+                    if (description) metaHtml += ` — ${escapeHtml(description)}`;
+                    if (createdDate) {
+                        metaHtml += `<br><span class="date-info">Created: ${createdDate}`;
+                        if (updatedDate && updatedDate !== createdDate) {
+                            metaHtml += ` · Updated: ${updatedDate}`;
+                        }
+                        metaHtml += `</span>`;
+                    }
+                    metaEl.innerHTML = metaHtml;
                     
                     // Update asset data
                     const dataEl = document.getElementById("asset-data");
@@ -80,6 +94,15 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+        
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
         }
         
         loadAsset();
