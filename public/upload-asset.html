@@ -49,7 +49,7 @@
     <button type="submit">Submit Asset</button>
   </form>
 
-  <pre id="output">Loading existing entries…</pre>
+  <pre id="output"></pre>
 
   <script type="module">
     import { supabase } from "./auth.js";
@@ -102,14 +102,6 @@
       imageDropzone.classList.remove("has-image");
     });
 
-    // ---------------- READ ----------------
-    async function loadEntries() {
-      const res = await fetch("/api/entries");
-      output.textContent = JSON.stringify(await res.json(), null, 2);
-    }
-
-    loadEntries();
-
     // ---------------- WRITE ----------------
     form.onsubmit = async e => {
       e.preventDefault();
@@ -156,14 +148,14 @@
         body: JSON.stringify(payload)
       });
 
-      output.textContent = await res.text();
-
       if (res.ok) {
+        output.textContent = "Upload complete";
         form.reset();
         selectedImageFile = null;
         imagePreview.src = "";
         imageDropzone.classList.remove("has-image");
-        loadEntries();
+      } else {
+        output.textContent = await res.text();
       }
     };
   </script>
