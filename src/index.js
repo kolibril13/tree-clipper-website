@@ -21,8 +21,8 @@ export default {
     if (request.method === "GET") {
       const { data, error } = await supabase
         .from("entries")
-        .select("id, content, created_at, user_id")
-        .order("created_at", { ascending: false });
+        .select("id, asset_id, author, creation_date, last_update, asset_data, title, image_data, description, user_id")
+        .order("creation_date", { ascending: false });
 
       if (error) {
         return new Response(error.message, { status: 500 });
@@ -44,22 +44,37 @@ export default {
 
       const body = await request.json();
 
-      if (!body?.content) {
-        return new Response("Missing content", { status: 400 });
+      // Validate required fields
+      if (!body?.assetData) {
+        return new Response("Missing required field: assetData", { status: 400 });
       }
+
+      const now = new Date().toISOString().split("T")[0];
+      const assetId = `asset-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const author = userData.user.user_metadata?.full_name 
+        || userData.user.user_metadata?.name 
+        || userData.user.email 
+        || "Unknown";
 
       const { error } = await supabase
         .from("entries")
         .insert({
           user_id: userData.user.id,
-          content: body.content
+          asset_id: assetId,
+          author: author,
+          creation_date: now,
+          last_update: now,
+          asset_data: body.assetData,
+          title: body.title || null,
+          image_data: body.imageData || null,
+          description: body.description || null
         });
 
       if (error) {
         return new Response(error.message, { status: 500 });
       }
 
-      return new Response("Inserted ✅", { status: 201 });
+      return new Response("Asset inserted ✅", { status: 201 });
     }
 
     return new Response("Method not allowed", { status: 405 });

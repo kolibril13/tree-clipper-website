@@ -190,3 +190,164 @@ pre {
 .copy-button.copied {
     background: #28a745;
 }
+
+/* Asset Form Styles */
+.asset-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2em;
+    max-width: 600px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
+}
+
+.form-group label {
+    font-weight: 500;
+    font-size: 0.9em;
+    color: #444;
+}
+
+.form-group input[type="text"],
+.form-group textarea {
+    padding: 0.7em 0.9em;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.95em;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: #fff;
+}
+
+.form-group input[type="text"]:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #2072cc;
+    box-shadow: 0 0 0 3px rgba(32, 114, 204, 0.12);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Image Dropzone */
+.image-dropzone {
+    position: relative;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    padding: 2em;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #fafafa;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-dropzone:hover {
+    border-color: #2072cc;
+    background: #f5f9ff;
+}
+
+.image-dropzone.dragover {
+    border-color: #2072cc;
+    background: #e8f2ff;
+    border-style: solid;
+}
+
+.image-dropzone.has-image {
+    padding: 1em;
+    border-style: solid;
+    border-color: #2072cc;
+}
+
+.image-dropzone.has-image .dropzone-content {
+    display: none;
+}
+
+.dropzone-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5em;
+    color: #888;
+}
+
+.dropzone-icon {
+    font-size: 2em;
+    opacity: 0.7;
+}
+
+.dropzone-text {
+    font-size: 0.9em;
+    line-height: 1.5;
+}
+
+.image-preview {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 4px;
+    display: none;
+    object-fit: contain;
+}
+
+.image-dropzone.has-image .image-preview {
+    display: block;
+}
+
+.remove-image {
+    position: absolute;
+    top: 0.5em;
+    right: 0.5em;
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2em;
+    line-height: 1;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.remove-image:hover {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.image-dropzone.has-image .remove-image {
+    display: flex;
+}
+
+/* Submit Button */
+#submit-btn {
+    padding: 0.8em 1.5em;
+    background: #2072cc;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    margin-top: 0.5em;
+}
+
+#submit-btn:hover {
+    background: #185ba0;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(32, 114, 204, 0.25);
+}
+
+#submit-btn:active {
+    transform: translateY(0);
+}

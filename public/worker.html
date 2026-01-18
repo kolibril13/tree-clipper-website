@@ -12,25 +12,106 @@
 
   <h1>Worker</h1>
 
-  <textarea
-    id="content-input"
-    placeholder="Write something…"
-    rows="6"
-    style="width: 100%; max-width: 600px;"
-  ></textarea>
+  <form id="asset-form" class="asset-form">
+    <div class="form-group">
+      <label for="asset-data">Asset Data *</label>
+      <textarea
+        id="asset-data"
+        placeholder="TreeClipper::H4sIALGFY2kC/+1aW2/iOBT..."
+        rows="5"
+        required
+      ></textarea>
+    </div>
 
-  <br /><br />
+    <div class="form-group">
+      <label for="title">Title</label>
+      <input type="text" id="title" placeholder="Ring Arrangement (optional)" />
+    </div>
 
-  <button id="submit-btn">Submit</button>
+    <div class="form-group">
+      <label for="description">Description</label>
+      <textarea id="description" rows="3" placeholder="Brief description (optional)"></textarea>
+    </div>
 
-  <pre id="output">Loading…</pre>
+    <div class="form-group">
+      <label>Preview Image</label>
+      <div class="image-dropzone" id="image-dropzone">
+        <input type="file" id="image-input" accept="image/*" hidden />
+        <div class="dropzone-content">
+          <span class="dropzone-icon">📷</span>
+          <span class="dropzone-text">Drag & drop an image here<br />or click to select</span>
+        </div>
+        <img id="image-preview" class="image-preview" alt="Preview" />
+        <button type="button" id="remove-image" class="remove-image" title="Remove image">×</button>
+      </div>
+    </div>
+
+    <button type="submit" id="submit-btn">Submit Asset</button>
+  </form>
+
+  <pre id="output">Loading existing entries…</pre>
 
   <script type="module">
     import { supabase } from "./auth.js";
 
     const output = document.getElementById("output");
-    const submitBtn = document.getElementById("submit-btn");
-    const input = document.getElementById("content-input");
+    const form = document.getElementById("asset-form");
+    const imageDropzone = document.getElementById("image-dropzone");
+    const imageInput = document.getElementById("image-input");
+    const imagePreview = document.getElementById("image-preview");
+    const removeImageBtn = document.getElementById("remove-image");
+
+    let imageDataUrl = null;
+
+    // ---------- IMAGE DRAG & DROP ----------
+    imageDropzone.addEventListener("click", (e) => {
+      if (e.target !== removeImageBtn) {
+        imageInput.click();
+      }
+    });
+
+    imageDropzone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      imageDropzone.classList.add("dragover");
+    });
+
+    imageDropzone.addEventListener("dragleave", () => {
+      imageDropzone.classList.remove("dragover");
+    });
+
+    imageDropzone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      imageDropzone.classList.remove("dragover");
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith("image/")) {
+        handleImageFile(file);
+      }
+    });
+
+    imageInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        handleImageFile(file);
+      }
+    });
+
+    function handleImageFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        imageDataUrl = e.target.result;
+        imagePreview.src = imageDataUrl;
+        imageDropzone.classList.add("has-image");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    removeImageBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      imageDataUrl = null;
+      imagePreview.src = "";
+      imageInput.value = "";
+      imageDropzone.classList.remove("has-image");
+    });
 
     // ---------- READ (public) ----------
     async function loadEntries() {
@@ -42,9 +123,8 @@
     loadEntries();
 
     // ---------- WRITE (authenticated) ----------
-    submitBtn.onclick = async () => {
-      const content = input.value.trim();
-      if (!content) return;
+    form.onsubmit = async (e) => {
+      e.preventDefault();
 
       const {
         data: { session }
@@ -55,20 +135,30 @@
         return;
       }
 
+      const assetPayload = {
+        assetData: document.getElementById("asset-data").value.trim(),
+        title: document.getElementById("title").value.trim() || null,
+        imageData: imageDataUrl || null,
+        description: document.getElementById("description").value.trim() || null
+      };
+
       const res = await fetch("/api/entries", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({ content })
+        body: JSON.stringify(assetPayload)
       });
 
       const text = await res.text();
       output.textContent = text;
 
       if (res.ok) {
-        input.value = "";
+        form.reset();
+        imageDataUrl = null;
+        imagePreview.src = "";
+        imageDropzone.classList.remove("has-image");
         loadEntries();
       }
     };
