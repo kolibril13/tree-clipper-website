@@ -121,6 +121,9 @@ export default {
           title: body.title,
           description: body.description,
           image_data: body.imageData,
+          node_type: body.nodeType || null,
+          blender_version: body.blenderVersion || null,
+          treeclipper_version: body.treeclipperVersion || null,
           creation_date: now,
           last_update: now
         });
@@ -170,6 +173,9 @@ export default {
       if (body.description !== undefined) updates.description = body.description;
       if (body.assetData !== undefined) updates.asset_data = body.assetData;
       if (body.imageData !== undefined) updates.image_data = body.imageData;
+      if (body.nodeType !== undefined) updates.node_type = body.nodeType;
+      if (body.blenderVersion !== undefined) updates.blender_version = body.blenderVersion;
+      if (body.treeclipperVersion !== undefined) updates.treeclipper_version = body.treeclipperVersion;
 
       // Delete old image from storage if it's being replaced or removed
       if (body.imageData !== undefined && existing.image_data && existing.image_data !== body.imageData) {

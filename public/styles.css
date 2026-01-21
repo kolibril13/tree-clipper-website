@@ -978,3 +978,40 @@ pre {
 .modal-content .dropzone-text {
     font-size: 0.85em;
 }
+
+/* Asset metadata display */
+.asset-meta {
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 0.75em 1em;
+    margin-bottom: 1.2em;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    opacity: 0.85;
+}
+
+.meta-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    background: #f1f5f9;
+    padding: 0.4em 0.75em;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+.meta-label {
+    font-size: 0.7em;
+    color: #94a3b8;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.meta-value {
+    font-size: 0.9em;
+    color: #64748b;
+    font-weight: 600;
+}

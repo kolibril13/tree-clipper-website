@@ -28,6 +28,21 @@
     </div>
 
     <div id="more-fields" style="display: none;">
+      <div id="asset-meta" class="asset-meta" style="display: none;">
+        <div class="meta-row">
+          <span class="meta-label">Type</span>
+          <span id="meta-node-type" class="meta-value"></span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Blender</span>
+          <span id="meta-blender-version" class="meta-value"></span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">TreeClipper</span>
+          <span id="meta-treeclipper-version" class="meta-value"></span>
+        </div>
+      </div>
+
       <div class="form-group">
         <label for="title">Title</label>
         <input type="text" id="title" placeholder="Ring Arrangement (optional)" />
@@ -132,7 +147,10 @@
       }
     }
 
-    assetDataInput.addEventListener("input", updateMoreFieldsVisibility);
+    assetDataInput.addEventListener("input", () => {
+      updateMoreFieldsVisibility();
+      updateAssetMeta();
+    });
     updateMoreFieldsVisibility();
 
     // IMAGE UI hooks in 'more-fields' context
@@ -140,8 +158,108 @@
     const imageInput = document.getElementById("image-input");
     const imagePreview = document.getElementById("image-preview");
     const removeImageBtn = document.getElementById("remove-image");
+    const assetMeta = document.getElementById("asset-meta");
+    const metaNodeType = document.getElementById("meta-node-type");
+    const metaBlenderVersion = document.getElementById("meta-blender-version");
+    const metaTreeclipperVersion = document.getElementById("meta-treeclipper-version");
 
     let selectedImageFile = null;
+    let parsedAssetMeta = null;
+
+    // ---------------- TREECLIPPER DECODING ----------------
+    function base64ToUint8Array(b64) {
+      b64 = b64.replace(/\s/g, '');
+      const binaryString = atob(b64);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return bytes;
+    }
+
+    async function ungzip(bytes) {
+      if (typeof DecompressionStream === "undefined") {
+        throw new Error("Browser does not support DecompressionStream");
+      }
+      const cs = new DecompressionStream('gzip');
+      const blob = new Blob([bytes]);
+      const decompressedStream = blob.stream().pipeThrough(cs);
+      const decompressed = await new Response(decompressedStream).arrayBuffer();
+      return new TextDecoder().decode(decompressed);
+    }
+
+    function mapBlIdnameToType(blIdname) {
+      const mapping = {
+        'GeometryNodeTree': 'geonodes',
+        'ShaderNodeTree': 'shader',
+        'CompositorNodeTree': 'compositor'
+      };
+      return mapping[blIdname] || blIdname || 'unknown';
+    }
+
+    function getNodeTypeLabel(nodeType) {
+      const labels = {
+        'geonodes': 'Geometry Nodes',
+        'shader': 'Shader',
+        'compositor': 'Compositor'
+      };
+      return labels[nodeType] || nodeType;
+    }
+
+    async function decodeTreeClipperData(raw) {
+      if (!raw.startsWith('TreeClipper::')) return null;
+      const parts = raw.split('::');
+      if (parts.length !== 2) return null;
+      
+      try {
+        const bytes = base64ToUint8Array(parts[1]);
+        const json = await ungzip(bytes);
+        const obj = JSON.parse(json);
+        
+        // Extract metadata
+        const blenderVersion = obj.blender_version || null;
+        const treeclipperVersion = obj.tree_clipper_version || null;
+        
+        // Get node type from the last node_tree's bl_idname
+        let nodeType = null;
+        if (Array.isArray(obj.node_trees) && obj.node_trees.length > 0) {
+          const lastTree = obj.node_trees[obj.node_trees.length - 1];
+          const blIdname = lastTree?.data?.bl_idname;
+          nodeType = mapBlIdnameToType(blIdname);
+        }
+        
+        return {
+          blenderVersion,
+          treeclipperVersion,
+          nodeType
+        };
+      } catch (e) {
+        console.error("Failed to decode TreeClipper data:", e);
+        return null;
+      }
+    }
+
+    async function updateAssetMeta() {
+      const raw = assetDataInput.value.trim();
+      if (!raw) {
+        assetMeta.style.display = "none";
+        parsedAssetMeta = null;
+        return;
+      }
+      
+      const meta = await decodeTreeClipperData(raw);
+      parsedAssetMeta = meta;
+      
+      if (meta && (meta.nodeType || meta.blenderVersion || meta.treeclipperVersion)) {
+        metaNodeType.textContent = meta.nodeType ? getNodeTypeLabel(meta.nodeType) : '—';
+        metaBlenderVersion.textContent = meta.blenderVersion || '—';
+        metaTreeclipperVersion.textContent = meta.treeclipperVersion || '—';
+        assetMeta.style.display = "";
+      } else {
+        assetMeta.style.display = "none";
+      }
+    }
 
     // ---------------- IMAGE UI ----------------
     imageDropzone.addEventListener("click", () => imageInput.click());
@@ -276,7 +394,10 @@
         assetData: document.getElementById("asset-data").value.trim(),
         title: document.getElementById("title").value.trim() || null,
         description: document.getElementById("description").value.trim() || null,
-        imageData: imageUrl
+        imageData: imageUrl,
+        nodeType: parsedAssetMeta?.nodeType || null,
+        blenderVersion: parsedAssetMeta?.blenderVersion || null,
+        treeclipperVersion: parsedAssetMeta?.treeclipperVersion || null
       };
 
       const res = await fetch("/api/entries", {
@@ -294,6 +415,8 @@
         selectedImageFile = null;
         imagePreview.src = "";
         imageDropzone.classList.remove("has-image");
+        parsedAssetMeta = null;
+        assetMeta.style.display = "none";
         // Also reset hasAssetDataBeenTouched so user returns to "untouched" logic again.
         hasAssetDataBeenTouched = false;
         updateMoreFieldsVisibility(); // reset show/hide
