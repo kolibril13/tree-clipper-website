@@ -12,7 +12,10 @@
     <h1>
         <span id="asset-title" style="color: #232323;">Loading...</span>
     </h1>
-    <p id="asset-meta" class="asset-meta"></p>
+    <div id="asset-meta" class="asset-meta"></div>
+    
+    <!-- Compatibility info section -->
+    <div id="compat-info" class="compat-info" style="display: none;"></div>
     
     <div class="asset-layout">
         <img id="asset-img" src="" class="asset-img" style="display: none;">
@@ -55,7 +58,7 @@
                 const titleEl = document.getElementById("asset-title");
                 titleEl.textContent = asset.title || "Untitled Asset";
                 
-                // Update meta info
+                // Update meta info (author, description, dates)
                 const metaEl = document.getElementById("asset-meta");
                 const author = asset.author || "Unknown";
                 const description = asset.description || "";
@@ -74,6 +77,43 @@
                     metaHtml += `</span>`;
                 }
                 metaEl.innerHTML = metaHtml;
+                
+                // Update compatibility info (node type, Blender version, TreeClipper version)
+                const compatEl = document.getElementById("compat-info");
+                const hasCompatInfo = asset.node_type || asset.blender_version || asset.treeclipper_version;
+                
+                if (hasCompatInfo) {
+                    let compatHtml = '';
+                    
+                    if (asset.node_type) {
+                        const nodeTypeLabel = formatNodeType(asset.node_type);
+                        const nodeTypeIcon = getNodeTypeIcon(asset.node_type);
+                        compatHtml += `
+                            <div class="compat-tag compat-tag--${asset.node_type}">
+                                <span class="compat-icon">${nodeTypeIcon}</span>
+                                <span class="compat-value">${nodeTypeLabel}</span>
+                            </div>`;
+                    }
+                    
+                    if (asset.blender_version) {
+                        compatHtml += `
+                            <div class="compat-tag compat-tag--blender">
+                                <span class="compat-label">Blender</span>
+                                <span class="compat-value">${escapeHtml(asset.blender_version)}</span>
+                            </div>`;
+                    }
+                    
+                    if (asset.treeclipper_version) {
+                        compatHtml += `
+                            <div class="compat-tag compat-tag--treeclipper">
+                                <span class="compat-label">TreeClipper</span>
+                                <span class="compat-value">${escapeHtml(asset.treeclipper_version)}</span>
+                            </div>`;
+                    }
+                    
+                    compatEl.innerHTML = compatHtml;
+                    compatEl.style.display = 'flex';
+                }
                 
                 // Update asset data
                 const dataEl = document.getElementById("asset-data");
@@ -106,6 +146,24 @@
                 month: 'short',
                 day: 'numeric'
             });
+        }
+        
+        function formatNodeType(nodeType) {
+            const labels = {
+                'geonodes': 'Geometry Nodes',
+                'shader': 'Shader',
+                'compositor': 'Compositor'
+            };
+            return labels[nodeType] || nodeType;
+        }
+        
+        function getNodeTypeIcon(nodeType) {
+            const icons = {
+                'geonodes': '◇',
+                'shader': '◐',
+                'compositor': '▣'
+            };
+            return icons[nodeType] || '●';
         }
         
         loadAsset();

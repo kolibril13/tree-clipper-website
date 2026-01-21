@@ -1015,3 +1015,74 @@ pre {
     color: #64748b;
     font-weight: 600;
 }
+
+/* ============================================
+   COMPATIBILITY INFO (Asset Detail Page)
+   ============================================ */
+
+.compat-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin-bottom: 1.2em;
+}
+
+.compat-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    padding: 0.35em 0.7em;
+    border-radius: 6px;
+    font-size: 0.85em;
+    font-weight: 500;
+    border: 1px solid;
+}
+
+.compat-icon {
+    font-size: 1em;
+    line-height: 1;
+}
+
+.compat-label {
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    opacity: 0.7;
+}
+
+.compat-value {
+    font-weight: 600;
+}
+
+/* Node type variants */
+.compat-tag--geonodes {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border-color: #6ee7b7;
+    color: #065f46;
+}
+
+.compat-tag--shader {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-color: #fbbf24;
+    color: #92400e;
+}
+
+.compat-tag--compositor {
+    background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+    border-color: #a78bfa;
+    color: #5b21b6;
+}
+
+/* Blender version */
+.compat-tag--blender {
+    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+    border-color: #fdba74;
+    color: #c2410c;
+}
+
+/* TreeClipper version */
+.compat-tag--treeclipper {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-color: #93c5fd;
+    color: #1e40af;
+}
