@@ -43,6 +43,22 @@
                     const imageHtml = imageUrl 
                         ? `<img src="${escapeHtml(imageUrl)}" alt="" class="asset-thumb" loading="lazy">`
                         : `<div class="asset-thumb-placeholder">📦</div>`;
+                    
+                    // Build tags HTML
+                    let tagsHtml = '';
+                    if (entry.node_type || entry.blender_version) {
+                        tagsHtml = '<div class="asset-tags">';
+                        if (entry.node_type) {
+                            const nodeLabel = formatNodeType(entry.node_type);
+                            const nodeIcon = getNodeTypeIcon(entry.node_type);
+                            tagsHtml += `<span class="asset-tag asset-tag--${entry.node_type}">${nodeIcon} ${nodeLabel}</span>`;
+                        }
+                        if (entry.blender_version) {
+                            tagsHtml += `<span class="asset-tag asset-tag--blender">Blender ${escapeHtml(entry.blender_version)}</span>`;
+                        }
+                        tagsHtml += '</div>';
+                    }
+                    
                     return `
                         <li>
                             <a href="asset.html?id=${encodeURIComponent(entry.asset_id)}">
@@ -50,6 +66,7 @@
                                 <div class="asset-info">
                                     <span class="asset-title">${escapeHtml(title)}</span>
                                     <span class="asset-author">by ${escapeHtml(author)}</span>
+                                    ${tagsHtml}
                                 </div>
                             </a>
                         </li>
@@ -66,6 +83,24 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+        
+        function formatNodeType(nodeType) {
+            const labels = {
+                'geonodes': 'Geo Nodes',
+                'shader': 'Shader',
+                'compositor': 'Compositor'
+            };
+            return labels[nodeType] || nodeType;
+        }
+        
+        function getNodeTypeIcon(nodeType) {
+            const icons = {
+                'geonodes': '◇',
+                'shader': '◐',
+                'compositor': '▣'
+            };
+            return icons[nodeType] || '●';
         }
         
         loadAssets();

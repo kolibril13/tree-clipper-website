@@ -208,6 +208,44 @@ a:hover {
     text-overflow: ellipsis;
 }
 
+.assets-list .asset-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35em;
+    margin-top: 0.25em;
+}
+
+.assets-list .asset-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25em;
+    padding: 0.15em 0.45em;
+    border-radius: 4px;
+    font-size: 0.7em;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.assets-list .asset-tag--geonodes {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.assets-list .asset-tag--shader {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.assets-list .asset-tag--compositor {
+    background: #ede9fe;
+    color: #5b21b6;
+}
+
+.assets-list .asset-tag--blender {
+    background: #ffedd5;
+    color: #c2410c;
+}
+
 .assets-list .loading-item,
 .assets-list .empty-item,
 .assets-list .error-item {
