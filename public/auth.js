@@ -24,7 +24,7 @@ function renderLoginCorner(user) {
     corner.innerHTML = '';
     corner.insertAdjacentHTML(
       "afterbegin",
-      `<span class="login-status"></span><button class="logout-btn">Logout</button>`
+      `<a href="dashboard.html" class="login-status"></a><button class="logout-btn">Logout</button>`
     );
     corner.querySelector(".login-status").textContent = displayName;
 

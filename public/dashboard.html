@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Assets – Tree Clipper</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="login-corner"></div>
+  <a href="index.html" class="back-button">←</a>
+
+  <h1>My Assets</h1>
+
+  <div id="login-prompt" class="login-prompt">
+    <p>Please log in with Discord to view your assets.</p>
+  </div>
+
+  <div id="dashboard-content" style="display: none;">
+    <ul id="my-assets-list" class="assets-list dashboard-list">
+      <li class="loading-item">Loading your assets...</li>
+    </ul>
+
+    <a href="upload-asset.html" class="upload-btn">+ Upload New Asset</a>
+  </div>
+
+  <!-- Edit Modal -->
+  <div id="edit-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <button class="modal-close" id="modal-close">×</button>
+      <h2>Edit Asset</h2>
+      
+      <form id="edit-form" class="asset-form">
+        <input type="hidden" id="edit-asset-id" />
+        
+        <div class="form-group">
+          <label for="edit-title">Title</label>
+          <input type="text" id="edit-title" placeholder="Asset title" />
+        </div>
+
+        <div class="form-group">
+          <label for="edit-description">Description</label>
+          <textarea id="edit-description" rows="3" placeholder="Brief description"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="edit-asset-data">Asset Data *</label>
+          <textarea id="edit-asset-data" rows="4" required placeholder="TreeClipper::H4sIALGFY2kC/+1aW2/iOBT..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Preview Image</label>
+          <div class="current-image-preview" id="current-image-container">
+            <img id="current-image" src="" alt="Current preview" />
+            <button type="button" id="remove-current-image" class="remove-image-btn">Remove Image</button>
+          </div>
+          <div class="image-dropzone" id="edit-image-dropzone">
+            <input type="file" id="edit-image-input" accept="image/*" hidden />
+            <div class="dropzone-content">
+              <span class="dropzone-icon">📷</span>
+              <span class="dropzone-text">Drop new image or click to select</span>
+            </div>
+            <img id="edit-image-preview" class="image-preview" alt="Preview" />
+            <button type="button" id="edit-remove-image" class="remove-image">×</button>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="cancel-edit" class="btn-secondary">Cancel</button>
+          <button type="submit" class="btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content modal-small">
+      <h2>Delete Asset?</h2>
+      <p id="delete-asset-name" class="delete-warning"></p>
+      <p class="delete-warning-sub">This action cannot be undone.</p>
+      <input type="hidden" id="delete-asset-id" />
+      <div class="modal-actions">
+        <button type="button" id="cancel-delete" class="btn-secondary">Cancel</button>
+        <button type="button" id="confirm-delete" class="btn-danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="output" class="status-message">
+    <span class="status-icon"></span>
+    <span class="status-text"></span>
+  </div>
+
+  <div class="prototype-warning">⚠️ Early Prototype. Work in progress. All data will be deleted every few hours.</div>
+
+  <script type="module">
+    import { supabase, initLoginCorner } from "./auth.js";
+
+    initLoginCorner();
+
+    const loginPrompt = document.getElementById("login-prompt");
+    const dashboardContent = document.getElementById("dashboard-content");
+    const assetsList = document.getElementById("my-assets-list");
+    const output = document.getElementById("output");
+    const statusIcon = output.querySelector(".status-icon");
+    const statusText = output.querySelector(".status-text");
+
+    // Edit modal elements
+    const editModal = document.getElementById("edit-modal");
+    const editForm = document.getElementById("edit-form");
+    const editAssetId = document.getElementById("edit-asset-id");
+    const editTitle = document.getElementById("edit-title");
+    const editDescription = document.getElementById("edit-description");
+    const editAssetData = document.getElementById("edit-asset-data");
+    const currentImageContainer = document.getElementById("current-image-container");
+    const currentImage = document.getElementById("current-image");
+    const removeCurrentImageBtn = document.getElementById("remove-current-image");
+    const editImageDropzone = document.getElementById("edit-image-dropzone");
+    const editImageInput = document.getElementById("edit-image-input");
+    const editImagePreview = document.getElementById("edit-image-preview");
+    const editRemoveImage = document.getElementById("edit-remove-image");
+
+    // Delete modal elements
+    const deleteModal = document.getElementById("delete-modal");
+    const deleteAssetId = document.getElementById("delete-asset-id");
+    const deleteAssetName = document.getElementById("delete-asset-name");
+
+    let currentSession = null;
+    let statusTimeout;
+    let selectedNewImage = null;
+    let currentImageUrl = null;
+
+    // ---------------- AUTH STATE ----------------
+    function updateAuthUI(user) {
+      if (user) {
+        loginPrompt.style.display = "none";
+        dashboardContent.style.display = "";
+        loadMyAssets();
+      } else {
+        loginPrompt.style.display = "";
+        dashboardContent.style.display = "none";
+      }
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      currentSession = session;
+      updateAuthUI(session?.user ?? null);
+    });
+
+    supabase.auth.onAuthStateChange((event, session) => {
+      currentSession = session;
+      updateAuthUI(session?.user ?? null);
+    });
+
+    // ---------------- STATUS MESSAGES ----------------
+    function showStatus(type, message) {
+      clearTimeout(statusTimeout);
+      output.classList.remove("fade-out");
+      output.className = "status-message visible " + type;
+      statusIcon.textContent = type === "success" ? "✓" : type === "error" ? "✕" : "ℹ";
+      statusText.textContent = message;
+      
+      statusTimeout = setTimeout(() => {
+        output.classList.add("fade-out");
+        setTimeout(() => {
+          output.classList.remove("visible", "fade-out");
+        }, 400);
+      }, 2000);
+    }
+
+    // ---------------- LOAD ASSETS ----------------
+    async function loadMyAssets() {
+      if (!currentSession) return;
+
+      assetsList.innerHTML = '<li class="loading-item">Loading your assets...</li>';
+
+      try {
+        const res = await fetch("/api/entries?mine=true", {
+          headers: {
+            "Authorization": `Bearer ${currentSession.access_token}`
+          }
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch");
+
+        const entries = await res.json();
+
+        if (!entries || entries.length === 0) {
+          assetsList.innerHTML = '<li class="empty-item">You haven\'t uploaded any assets yet.</li>';
+          return;
+        }
+
+        assetsList.innerHTML = entries.map(entry => {
+          const title = entry.title || "Untitled Asset";
+          const imageUrl = entry.image_data;
+          const imageHtml = imageUrl 
+            ? `<img src="${escapeHtml(imageUrl)}" alt="" class="asset-thumb" loading="lazy">`
+            : `<div class="asset-thumb-placeholder">📦</div>`;
+          
+          return `
+            <li data-asset-id="${escapeHtml(entry.asset_id)}">
+              <div class="dashboard-asset-row">
+                <a href="asset.html?id=${encodeURIComponent(entry.asset_id)}" class="asset-link">
+                  ${imageHtml}
+                  <div class="asset-info">
+                    <span class="asset-title">${escapeHtml(title)}</span>
+                    <span class="asset-date">${formatDate(entry.creation_date)}</span>
+                  </div>
+                </a>
+                <div class="asset-actions">
+                  <button class="btn-edit" data-id="${escapeHtml(entry.asset_id)}" title="Edit">✏️</button>
+                  <button class="btn-delete" data-id="${escapeHtml(entry.asset_id)}" data-title="${escapeHtml(title)}" title="Delete">🗑️</button>
+                </div>
+              </div>
+            </li>
+          `;
+        }).join('');
+
+        // Attach event listeners
+        assetsList.querySelectorAll(".btn-edit").forEach(btn => {
+          btn.addEventListener("click", () => openEditModal(btn.dataset.id));
+        });
+
+        assetsList.querySelectorAll(".btn-delete").forEach(btn => {
+          btn.addEventListener("click", () => openDeleteModal(btn.dataset.id, btn.dataset.title));
+        });
+
+      } catch (err) {
+        console.error("Failed to load assets:", err);
+        assetsList.innerHTML = '<li class="error-item">Failed to load your assets. Please try again.</li>';
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function formatDate(isoString) {
+      if (!isoString) return "";
+      const date = new Date(isoString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+
+    // ---------------- EDIT MODAL ----------------
+    async function openEditModal(assetId) {
+      try {
+        const res = await fetch(`/api/entries?id=${encodeURIComponent(assetId)}`);
+        if (!res.ok) throw new Error("Asset not found");
+        
+        const asset = await res.json();
+        
+        editAssetId.value = asset.asset_id;
+        editTitle.value = asset.title || "";
+        editDescription.value = asset.description || "";
+        editAssetData.value = asset.asset_data || "";
+        
+        // Handle current image
+        currentImageUrl = asset.image_data;
+        selectedNewImage = null;
+        
+        if (currentImageUrl) {
+          currentImage.src = currentImageUrl;
+          currentImageContainer.style.display = "block";
+        } else {
+          currentImageContainer.style.display = "none";
+        }
+        
+        // Reset new image dropzone
+        editImagePreview.src = "";
+        editImageDropzone.classList.remove("has-image");
+        editImageInput.value = "";
+        
+        editModal.style.display = "flex";
+      } catch (err) {
+        showStatus("error", "Failed to load asset details");
+      }
+    }
+
+    function closeEditModal() {
+      editModal.style.display = "none";
+      editForm.reset();
+      selectedNewImage = null;
+    }
+
+    document.getElementById("modal-close").addEventListener("click", closeEditModal);
+    document.getElementById("cancel-edit").addEventListener("click", closeEditModal);
+    
+    editModal.addEventListener("click", (e) => {
+      if (e.target === editModal) closeEditModal();
+    });
+
+    // Current image removal - immediately delete from storage
+    removeCurrentImageBtn.addEventListener("click", async () => {
+      if (!currentSession || !currentImageUrl) return;
+
+      const assetId = editAssetId.value;
+      removeCurrentImageBtn.disabled = true;
+      removeCurrentImageBtn.textContent = "Removing...";
+
+      try {
+        const res = await fetch(`/api/entries?id=${encodeURIComponent(assetId)}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${currentSession.access_token}`
+          },
+          body: JSON.stringify({ imageData: null })
+        });
+
+        if (res.ok) {
+          currentImageUrl = null;
+          currentImageContainer.style.display = "none";
+          showStatus("success", "Image removed");
+        } else {
+          showStatus("error", "Failed to remove image");
+        }
+      } catch (err) {
+        showStatus("error", "Failed to remove image");
+      } finally {
+        removeCurrentImageBtn.disabled = false;
+        removeCurrentImageBtn.textContent = "Remove Image";
+      }
+    });
+
+    // New image dropzone
+    editImageDropzone.addEventListener("click", () => editImageInput.click());
+
+    editImageDropzone.addEventListener("dragover", e => {
+      e.preventDefault();
+      editImageDropzone.classList.add("dragover");
+    });
+
+    editImageDropzone.addEventListener("dragleave", () => {
+      editImageDropzone.classList.remove("dragover");
+    });
+
+    editImageDropzone.addEventListener("drop", e => {
+      e.preventDefault();
+      editImageDropzone.classList.remove("dragover");
+      const file = e.dataTransfer.files[0];
+      if (file?.type.startsWith("image/")) setNewImage(file);
+    });
+
+    editImageInput.addEventListener("change", e => {
+      const file = e.target.files[0];
+      if (file) setNewImage(file);
+    });
+
+    function setNewImage(file) {
+      selectedNewImage = file;
+      editImagePreview.src = URL.createObjectURL(file);
+      editImageDropzone.classList.add("has-image");
+      // Hide current image since we're replacing
+      currentImageContainer.style.display = "none";
+    }
+
+    editRemoveImage.addEventListener("click", e => {
+      e.stopPropagation();
+      selectedNewImage = null;
+      editImageInput.value = "";
+      editImagePreview.src = "";
+      editImageDropzone.classList.remove("has-image");
+      // Show current image again if it exists
+      if (currentImageUrl) {
+        currentImageContainer.style.display = "block";
+      }
+    });
+
+    // Handle paste for images in edit modal
+    document.addEventListener("paste", e => {
+      if (editModal.style.display !== "flex") return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (const item of items) {
+        if (item.type.startsWith("image/")) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) setNewImage(file);
+          break;
+        }
+      }
+    });
+
+    // Submit edit form
+    editForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      if (!currentSession) {
+        showStatus("error", "Please log in to edit assets");
+        return;
+      }
+
+      const assetId = editAssetId.value;
+      let imageUrl = undefined; // undefined = don't change
+
+      // Handle new image upload
+      if (selectedNewImage) {
+        const ext = selectedNewImage.name.split(".").pop();
+        const filePath = `${currentSession.user.id}/asset-${Date.now()}.${ext}`;
+
+        const { error } = await supabase.storage
+          .from("asset-images")
+          .upload(filePath, selectedNewImage);
+
+        if (error) {
+          showStatus("error", "Image upload failed: " + error.message);
+          return;
+        }
+
+        imageUrl = supabase.storage
+          .from("asset-images")
+          .getPublicUrl(filePath).data.publicUrl;
+      }
+
+      const payload = {
+        title: editTitle.value.trim() || null,
+        description: editDescription.value.trim() || null,
+        assetData: editAssetData.value.trim()
+      };
+
+      if (imageUrl !== undefined) {
+        payload.imageData = imageUrl;
+      }
+
+      try {
+        const res = await fetch(`/api/entries?id=${encodeURIComponent(assetId)}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${currentSession.access_token}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          showStatus("success", "Asset updated!");
+          closeEditModal();
+          loadMyAssets();
+        } else {
+          showStatus("error", await res.text());
+        }
+      } catch (err) {
+        showStatus("error", "Failed to update asset");
+      }
+    });
+
+    // ---------------- DELETE MODAL ----------------
+    function openDeleteModal(assetId, title) {
+      deleteAssetId.value = assetId;
+      deleteAssetName.textContent = `"${title}"`;
+      deleteModal.style.display = "flex";
+    }
+
+    function closeDeleteModal() {
+      deleteModal.style.display = "none";
+    }
+
+    document.getElementById("cancel-delete").addEventListener("click", closeDeleteModal);
+    
+    deleteModal.addEventListener("click", (e) => {
+      if (e.target === deleteModal) closeDeleteModal();
+    });
+
+    document.getElementById("confirm-delete").addEventListener("click", async () => {
+      if (!currentSession) {
+        showStatus("error", "Please log in to delete assets");
+        return;
+      }
+
+      const assetId = deleteAssetId.value;
+
+      try {
+        const res = await fetch(`/api/entries?id=${encodeURIComponent(assetId)}`, {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${currentSession.access_token}`
+          }
+        });
+
+        if (res.ok) {
+          showStatus("success", "Asset deleted");
+          closeDeleteModal();
+          loadMyAssets();
+        } else {
+          showStatus("error", await res.text());
+        }
+      } catch (err) {
+        showStatus("error", "Failed to delete asset");
+      }
+    });
+
+    // Close modals with Escape key
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        if (editModal.style.display === "flex") closeEditModal();
+        if (deleteModal.style.display === "flex") closeDeleteModal();
+      }
+    });
+  </script>
+</body>
+</html>
