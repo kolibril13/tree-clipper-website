@@ -49,6 +49,7 @@
           <img id="image-preview" class="image-preview" alt="Preview" />
           <button type="button" id="remove-image" class="remove-image">×</button>
         </div>
+        <small id="compression-note" class="compression-note" style="display: none;">Image will be slightly compressed for faster loading</small>
       </div>
 
       <button type="submit">Submit Asset</button>
@@ -154,22 +155,60 @@
       imageDropzone.classList.remove("dragover")
     );
 
-    imageDropzone.addEventListener("drop", e => {
+    imageDropzone.addEventListener("drop", async e => {
       e.preventDefault();
       imageDropzone.classList.remove("dragover");
       const file = e.dataTransfer.files[0];
-      if (file?.type.startsWith("image/")) setImage(file);
+      if (file?.type.startsWith("image/")) await setImage(file);
     });
 
-    imageInput.addEventListener("change", e => {
+    imageInput.addEventListener("change", async e => {
       const file = e.target.files[0];
-      if (file) setImage(file);
+      if (file) await setImage(file);
     });
 
-    function setImage(file) {
-      selectedImageFile = file;
-      imagePreview.src = URL.createObjectURL(file);
+    // Compress image to JPEG with target quality and max dimensions
+    async function compressImage(file, maxWidth = 1400, maxHeight = 1400, quality = 0.95) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          // Calculate new dimensions maintaining aspect ratio
+          let { width, height } = img;
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+          
+          // Draw to canvas
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Convert to JPEG blob
+          canvas.toBlob(resolve, "image/jpeg", quality);
+          URL.revokeObjectURL(img.src);
+        };
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    const compressionNote = document.getElementById("compression-note");
+
+    async function setImage(file) {
       imageDropzone.classList.add("has-image");
+      
+      // Compress the image
+      const compressed = await compressImage(file);
+      selectedImageFile = compressed;
+      
+      // Show the compressed version as preview
+      imagePreview.src = URL.createObjectURL(compressed);
+      
+      // Show compression note
+      compressionNote.style.display = "";
     }
 
     removeImageBtn.addEventListener("click", e => {
@@ -178,10 +217,11 @@
       imageInput.value = "";
       imagePreview.src = "";
       imageDropzone.classList.remove("has-image");
+      compressionNote.style.display = "none";
     });
 
     // Handle Ctrl+V / Cmd+V paste for images (only when moreFields is visible)
-    document.addEventListener("paste", e => {
+    document.addEventListener("paste", async e => {
       // Only if shown
       if (moreFields.style.display === "none") return;
       const items = e.clipboardData?.items;
@@ -191,7 +231,7 @@
         if (item.type.startsWith("image/")) {
           e.preventDefault();
           const file = item.getAsFile();
-          if (file) setImage(file);
+          if (file) await setImage(file);
           break;
         }
       }
@@ -213,12 +253,14 @@
       let imageUrl = null;
 
       if (selectedImageFile) {
-        const ext = selectedImageFile.name.split(".").pop();
-        const filePath = `${session.user.id}/asset-${Date.now()}.${ext}`;
+        // selectedImageFile is already a compressed JPEG blob
+        const filePath = `${session.user.id}/asset-${Date.now()}.jpg`;
 
         const { error } = await supabase.storage
           .from("asset-images")
-          .upload(filePath, selectedImageFile);
+          .upload(filePath, selectedImageFile, {
+            contentType: "image/jpeg"
+          });
 
         if (error) {
           showStatus("error", "Image upload failed: " + error.message);

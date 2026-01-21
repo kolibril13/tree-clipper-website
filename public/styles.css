@@ -508,6 +508,15 @@ pre {
     display: flex;
 }
 
+/* Compression note */
+.compression-note {
+    display: block;
+    margin-top: 0.5em;
+    font-size: 0.85em;
+    color: #6b7280;
+    font-style: italic;
+}
+
 /* Submit Button */
 #submit-btn,
 .asset-form button[type="submit"] {
