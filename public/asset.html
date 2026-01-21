@@ -12,10 +12,6 @@
     <h1>
         <span id="asset-title" style="color: #232323;">Loading...</span>
     </h1>
-    <div id="asset-meta" class="asset-meta"></div>
-    
-    <!-- Compatibility info section -->
-    <div id="compat-info" class="compat-info" style="display: none;"></div>
     
     <div class="asset-layout">
         <img id="asset-img" src="" class="asset-img" style="display: none;">
@@ -25,6 +21,11 @@
             <button id="copy-button" class="copy-button" onclick="copyAssetData()">Copy</button>
         </div>
     </div>
+    
+    <!-- Compatibility info section -->
+    <div id="compat-info" class="compat-info" style="display: none;"></div>
+    
+    <div id="asset-meta" class="asset-meta"></div>
 
     <script type="module">
         async function loadAsset() {
