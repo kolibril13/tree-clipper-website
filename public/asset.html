@@ -69,7 +69,7 @@
                 const updatedDate = asset.last_update ? formatDate(asset.last_update) : null;
                 
                 let metaHtml = `by <strong>${escapeHtml(author)}</strong>`;
-                if (description) metaHtml += ` — ${escapeHtml(description)}`;
+                if (description) metaHtml += `<br>${escapeHtml(description)}`;
                 if (createdDate) {
                     metaHtml += `<br><span class="date-info">Created: ${createdDate}`;
                     if (updatedDate && updatedDate !== createdDate) {

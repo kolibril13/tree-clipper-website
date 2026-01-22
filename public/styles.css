@@ -317,6 +317,11 @@ a:hover {
     font-size: 0.95em;
     margin-top: -0.5em;
     margin-bottom: 1.5em;
+    text-align: left;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 0.75em 1em;
 }
 
 .asset-meta strong {
@@ -1075,8 +1080,9 @@ pre::-webkit-scrollbar {
     font-size: 0.85em;
 }
 
-/* Asset metadata display */
-.asset-meta {
+/* Asset metadata display (upload/edit forms) */
+.modal-content .asset-meta,
+.asset-form .asset-meta {
     background: #f8fafc;
     border: 1px dashed #cbd5e1;
     border-radius: 10px;
