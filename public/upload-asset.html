@@ -46,7 +46,7 @@
       <div class="form-group">
         <label for="title">Title *</label>
         <input type="text" id="title" placeholder="Ring Arrangement" required />
-        <small style="color: #6b7280; font-size: 0.85em;">Cannot be changed later (used in URL)</small>
+        <small id="slug-status" style="font-size: 0.85em; color: #6b7280;">Cannot be changed later (used in URL)</small>
       </div>
 
       <div class="form-group">
@@ -93,8 +93,12 @@
     const statusText = output.querySelector(".status-text");
     const assetDataInput = document.getElementById("asset-data");
     const moreFields = document.getElementById("more-fields");
+    const titleInput = document.getElementById("title");
+    const slugStatus = document.getElementById("slug-status");
 
     let statusTimeout;
+    let slugCheckTimeout;
+    let currentSlugInfo = null;
 
     // ---------------- AUTH STATE ----------------
     function updateAuthUI(user) {
@@ -154,6 +158,58 @@
       updateAssetMeta();
     });
     updateMoreFieldsVisibility();
+
+    // ---------------- SLUG AVAILABILITY CHECK ----------------
+    async function checkSlugAvailability(title) {
+      if (!title.trim()) {
+        slugStatus.textContent = "Cannot be changed later (used in URL)";
+        slugStatus.style.color = "#6b7280";
+        currentSlugInfo = null;
+        return;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        slugStatus.textContent = "Log in to check availability";
+        slugStatus.style.color = "#6b7280";
+        return;
+      }
+
+      slugStatus.textContent = "Checking...";
+      slugStatus.style.color = "#6b7280";
+
+      try {
+        const res = await fetch(`/api/slug/check?title=${encodeURIComponent(title)}`, {
+          headers: { "Authorization": `Bearer ${session.access_token}` }
+        });
+        const data = await res.json();
+        
+        currentSlugInfo = data;
+
+        if (data.error) {
+          slugStatus.textContent = data.error;
+          slugStatus.style.color = "#dc2626";
+        } else if (data.available) {
+          slugStatus.innerHTML = `✓ URL: <strong>/${data.author}/${data.slug}</strong>`;
+          slugStatus.style.color = "#16a34a";
+        } else {
+          // Show warning that slug will be modified
+          slugStatus.innerHTML = `⚠ <strong>/${data.author}/${data.slug}</strong> exists — will be saved as <strong>/${data.author}/${data.availableSlug}</strong>`;
+          slugStatus.style.color = "#d97706";
+        }
+      } catch (err) {
+        slugStatus.textContent = "Failed to check availability";
+        slugStatus.style.color = "#dc2626";
+        currentSlugInfo = null;
+      }
+    }
+
+    titleInput.addEventListener("input", () => {
+      clearTimeout(slugCheckTimeout);
+      slugCheckTimeout = setTimeout(() => {
+        checkSlugAvailability(titleInput.value);
+      }, 300);
+    });
 
     // IMAGE UI hooks in 'more-fields' context
     const imageDropzone = document.getElementById("image-dropzone");
@@ -223,18 +279,21 @@
         const blenderVersion = obj.blender_version || null;
         const treeclipperVersion = obj.tree_clipper_version || null;
         
-        // Get node type from the last node_tree's bl_idname
+        // Get node type and name from the last node_tree
         let nodeType = null;
+        let name = null;
         if (Array.isArray(obj.node_trees) && obj.node_trees.length > 0) {
           const lastTree = obj.node_trees[obj.node_trees.length - 1];
           const blIdname = lastTree?.data?.bl_idname;
           nodeType = mapBlIdnameToType(blIdname);
+          name = lastTree?.data?.name || null;
         }
         
         return {
           blenderVersion,
           treeclipperVersion,
-          nodeType
+          nodeType,
+          name
         };
       } catch (e) {
         console.error("Failed to decode TreeClipper data:", e);
@@ -260,6 +319,13 @@
         assetMeta.style.display = "";
       } else {
         assetMeta.style.display = "none";
+      }
+      
+      // Auto-fill title from asset name if title is empty
+      if (meta?.name && !titleInput.value.trim()) {
+        titleInput.value = meta.name;
+        // Trigger slug check for the auto-filled title
+        checkSlugAvailability(meta.name);
       }
     }
 
@@ -367,6 +433,24 @@
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         showStatus("error", "Please log in to upload assets.");
+        return;
+      }
+
+      // Check slug availability before submitting
+      const title = titleInput.value.trim();
+      if (!title) {
+        showStatus("error", "Title is required");
+        return;
+      }
+
+      // Re-check slug availability (the backend will handle finding an available slug)
+      const slugRes = await fetch(`/api/slug/check?title=${encodeURIComponent(title)}`, {
+        headers: { "Authorization": `Bearer ${session.access_token}` }
+      });
+      const slugData = await slugRes.json();
+
+      if (slugData.error) {
+        showStatus("error", slugData.error);
         return;
       }
 

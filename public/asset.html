@@ -31,9 +31,8 @@
 
     <script type="module">
         async function loadAsset() {
-            // Support clean URL /:username/:slug, query params ?author=&slug=, and old ?id= format
+            // Support clean URL /:username/:slug or query params ?author=&slug=
             const params = new URLSearchParams(window.location.search);
-            const assetId = params.get('id');
             let username = params.get('author');
             let slug = params.get('slug');
             
@@ -46,16 +45,13 @@
                 }
             }
             
-            let apiUrl;
-            if (username && slug) {
-                apiUrl = `/api/asset/${encodeURIComponent(username)}/${encodeURIComponent(slug)}`;
-            } else if (assetId) {
-                apiUrl = `/api/entries?id=${encodeURIComponent(assetId)}`;
-            } else {
+            if (!username || !slug) {
                 document.getElementById("asset-title").textContent = "No Asset";
                 document.getElementById("asset-data").textContent = "Please provide an asset in the URL";
                 return;
             }
+            
+            const apiUrl = `/api/asset/${encodeURIComponent(username)}/${encodeURIComponent(slug)}`;
             
             try {
                 const res = await fetch(apiUrl);

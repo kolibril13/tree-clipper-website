@@ -201,6 +201,88 @@ export default {
       return Response.json(data);
     }
     
+    // ========== SLUG AVAILABILITY CHECK ==========
+    // GET /api/slug/check?title=xxx - Check if slug is available for current user
+    if (url.pathname === "/api/slug/check" && request.method === "GET") {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !userData?.user) {
+        return new Response("Unauthorized", { status: 401 });
+      }
+      
+      // Get username from users table
+      const { data: userProfile } = await supabase
+        .from("users")
+        .select("username")
+        .eq("id", userData.user.id)
+        .single();
+
+      if (!userProfile?.username) {
+        return Response.json({ available: false, error: "Please set a username first" });
+      }
+
+      const title = url.searchParams.get("title");
+      if (!title) {
+        return Response.json({ available: false, error: "Missing title" });
+      }
+
+      // Generate slug from title
+      const baseSlug = title
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 50);
+
+      if (!baseSlug) {
+        return Response.json({ available: false, slug: "", error: "Invalid title" });
+      }
+
+      // Check if base slug exists for this user
+      const { data: existing } = await supabase
+        .from("entries")
+        .select("slug")
+        .eq("author", userProfile.username)
+        .eq("slug", baseSlug)
+        .single();
+
+      if (!existing) {
+        // Base slug is available
+        return Response.json({ 
+          available: true, 
+          slug: baseSlug,
+          author: userProfile.username
+        });
+      }
+
+      // Find next available slug with suffix
+      let suffix = 1;
+      let availableSlug = `${baseSlug}-${suffix}`;
+      
+      while (suffix <= 100) {
+        const { data: check } = await supabase
+          .from("entries")
+          .select("slug")
+          .eq("author", userProfile.username)
+          .eq("slug", availableSlug)
+          .single();
+        
+        if (!check) break;
+        
+        suffix++;
+        availableSlug = `${baseSlug}-${suffix}`;
+      }
+
+      return Response.json({ 
+        available: false, 
+        slug: baseSlug,
+        availableSlug,
+        author: userProfile.username
+      });
+    }
+
     // ========== ASSET BY USERNAME/SLUG ==========
     // GET /api/asset/:username/:slug - Get asset by username and slug
     if (url.pathname.startsWith("/api/asset/") && request.method === "GET") {
@@ -226,7 +308,6 @@ export default {
 
     // ---------- PUBLIC READ ----------
     if (request.method === "GET") {
-      const assetId = url.searchParams.get("id");
       const mine = url.searchParams.get("mine");
 
       // Get current user's assets only
@@ -246,21 +327,6 @@ export default {
 
         if (error) {
           return new Response(error.message, { status: 500 });
-        }
-
-        return Response.json(data);
-      }
-
-      // Single asset lookup by ID
-      if (assetId) {
-        const { data, error } = await supabase
-          .from("entries")
-          .select("*")
-          .eq("asset_id", assetId)
-          .single();
-
-        if (error) {
-          return new Response(error.message, { status: error.code === "PGRST116" ? 404 : 500 });
         }
 
         return Response.json(data);
@@ -338,14 +404,10 @@ export default {
         }
       }
       
-      // Keep asset_id for backwards compatibility
-      const assetId = `asset-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
       const { error } = await supabase
         .from("entries")
         .insert({
           user_id: userData.user.id,
-          asset_id: assetId,
           slug,
           author,
           asset_data: body.assetData,
@@ -375,23 +437,20 @@ export default {
         return new Response("Unauthorized", { status: 401 });
       }
 
-      // Support both old asset_id and new username/slug format
-      const assetId = url.searchParams.get("id");
       const username = url.searchParams.get("author");
       const slug = url.searchParams.get("slug");
       
-      let query = supabase.from("entries").select("user_id, image_data, slug, author");
-      
-      if (username && slug) {
-        query = query.eq("author", username).eq("slug", slug);
-      } else if (assetId) {
-        query = query.eq("asset_id", assetId);
-      } else {
-        return new Response("Missing asset identifier", { status: 400 });
+      if (!username || !slug) {
+        return new Response("Missing author or slug", { status: 400 });
       }
 
       // Check ownership and get current image
-      const { data: existing, error: fetchError } = await query.single();
+      const { data: existing, error: fetchError } = await supabase
+        .from("entries")
+        .select("user_id, image_data, slug, author")
+        .eq("author", username)
+        .eq("slug", slug)
+        .single();
 
       if (fetchError) {
         return new Response("Asset not found", { status: 404 });
@@ -445,23 +504,20 @@ export default {
         return new Response("Unauthorized", { status: 401 });
       }
 
-      // Support both old asset_id and new username/slug format
-      const assetId = url.searchParams.get("id");
       const username = url.searchParams.get("author");
       const slug = url.searchParams.get("slug");
       
-      let query = supabase.from("entries").select("user_id, image_data, slug, author");
-      
-      if (username && slug) {
-        query = query.eq("author", username).eq("slug", slug);
-      } else if (assetId) {
-        query = query.eq("asset_id", assetId);
-      } else {
-        return new Response("Missing asset identifier", { status: 400 });
+      if (!username || !slug) {
+        return new Response("Missing author or slug", { status: 400 });
       }
 
       // Check ownership and get image URL
-      const { data: existing, error: fetchError } = await query.single();
+      const { data: existing, error: fetchError } = await supabase
+        .from("entries")
+        .select("user_id, image_data, slug, author")
+        .eq("author", username)
+        .eq("slug", slug)
+        .single();
 
       if (fetchError) {
         return new Response("Asset not found", { status: 404 });

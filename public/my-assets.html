@@ -246,10 +246,7 @@
             tagsHtml += '</div>';
           }
           
-          // Use new URL format if slug exists, fallback to old format
-          const assetUrl = entry.slug 
-              ? `/${encodeURIComponent(entry.author)}/${encodeURIComponent(entry.slug)}`
-              : `asset.html?id=${encodeURIComponent(entry.asset_id)}`;
+          const assetUrl = `/${encodeURIComponent(entry.author)}/${encodeURIComponent(entry.slug)}`;
           
           return `
             <li data-slug="${escapeHtml(entry.slug || '')}" data-author="${escapeHtml(entry.author || '')}">
