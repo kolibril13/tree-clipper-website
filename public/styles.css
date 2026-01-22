@@ -814,21 +814,54 @@ pre::-webkit-scrollbar {
 }
 
 /* ============================================
-   DASHBOARD STYLES
+   NAV LINKS (My Assets / Settings)
    ============================================ */
 
-/* Dashboard asset list with actions */
-.dashboard-list li {
+.nav-links {
+    display: flex;
+    gap: 0.6em;
+    margin-bottom: 1.5em;
+    padding-bottom: 1em;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.nav-links a {
+    padding: 0.5em 1em;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #6b7280;
+    font-weight: 500;
+    font-size: 0.9em;
+    transition: all 0.2s;
+}
+
+.nav-links a:hover {
+    background: #f3f4f6;
+    color: #374151;
+    text-decoration: none;
+}
+
+.nav-links a.active {
+    background: #eff6ff;
+    color: #2072cc;
+}
+
+/* ============================================
+   MY ASSETS PAGE STYLES
+   ============================================ */
+
+/* My assets list with actions */
+.my-assets-list li {
     padding: 0;
 }
 
-.dashboard-asset-row {
+.my-assets-row {
     display: flex;
     align-items: center;
     gap: 0.5em;
 }
 
-.dashboard-asset-row .asset-link {
+.my-assets-row .asset-link {
     flex: 1;
     display: flex;
     flex-direction: row;
@@ -839,11 +872,11 @@ pre::-webkit-scrollbar {
     min-width: 0;
 }
 
-.dashboard-asset-row .asset-link:hover {
+.my-assets-row .asset-link:hover {
     text-decoration: none;
 }
 
-.dashboard-list .asset-date {
+.my-assets-list .asset-date {
     font-size: 0.8em;
     color: #9ca3af;
 }

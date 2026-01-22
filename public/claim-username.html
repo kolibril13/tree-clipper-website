@@ -178,8 +178,8 @@
             if (res.ok) {
                 const userData = await res.json();
                 if (userData.username) {
-                    // Already has username, redirect to dashboard
-                    window.location.href = "dashboard.html";
+                    // Already has username, redirect to my assets
+                    window.location.href = "my-assets.html";
                 }
             }
         }
@@ -299,7 +299,7 @@
                 if (res.ok) {
                     showStatus("success", "Username claimed! Redirecting...");
                     setTimeout(() => {
-                        window.location.href = "dashboard.html";
+                        window.location.href = "my-assets.html";
                     }, 1000);
                 } else {
                     const error = await res.text();

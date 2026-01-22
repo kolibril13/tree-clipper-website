@@ -16,8 +16,13 @@
     <p>Please log in with Discord to view your assets.</p>
   </div>
 
-  <div id="dashboard-content" style="display: none;">
-    <ul id="my-assets-list" class="assets-list dashboard-list">
+  <div id="page-content" style="display: none;">
+    <nav class="nav-links">
+      <a href="my-assets.html" class="active">My Assets</a>
+      <a href="settings.html">Settings</a>
+    </nav>
+
+    <ul id="my-assets-list" class="assets-list my-assets-list">
       <li class="loading-item">Loading your assets...</li>
     </ul>
 
@@ -115,11 +120,11 @@
 
     initLoginCorner();
     
-    // Ensure user has a username before showing dashboard
+    // Ensure user has a username before showing content
     await ensureUsername();
 
     const loginPrompt = document.getElementById("login-prompt");
-    const dashboardContent = document.getElementById("dashboard-content");
+    const pageContent = document.getElementById("page-content");
     const assetsList = document.getElementById("my-assets-list");
     const output = document.getElementById("output");
     const statusIcon = output.querySelector(".status-icon");
@@ -163,11 +168,11 @@
     function updateAuthUI(user) {
       if (user) {
         loginPrompt.style.display = "none";
-        dashboardContent.style.display = "";
+        pageContent.style.display = "";
         loadMyAssets();
       } else {
         loginPrompt.style.display = "";
-        dashboardContent.style.display = "none";
+        pageContent.style.display = "none";
       }
     }
 
@@ -248,7 +253,7 @@
           
           return `
             <li data-slug="${escapeHtml(entry.slug || '')}" data-author="${escapeHtml(entry.author || '')}">
-              <div class="dashboard-asset-row">
+              <div class="my-assets-row">
                 <a href="${assetUrl}" class="asset-link">
                   ${imageHtml}
                   <div class="asset-info">
