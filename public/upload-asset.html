@@ -190,11 +190,11 @@
           slugStatus.textContent = data.error;
           slugStatus.style.color = "#dc2626";
         } else if (data.available) {
-          slugStatus.innerHTML = `✓ URL: <strong>/${data.author}/${data.slug}</strong>`;
+          slugStatus.innerHTML = `✓ URL: <strong>https://tree-clipper.com/${data.author}/${data.slug}</strong>`;
           slugStatus.style.color = "#16a34a";
         } else {
           // Show warning that slug will be modified
-          slugStatus.innerHTML = `⚠ <strong>/${data.author}/${data.slug}</strong> exists — will be saved as <strong>/${data.author}/${data.availableSlug}</strong>`;
+          slugStatus.innerHTML = `⚠ <strong>https://tree-clipper.com/${data.author}/${data.slug}</strong> exists — will be saved as <strong>https://tree-clipper.com/${data.author}/${data.availableSlug}</strong>`;
           slugStatus.style.color = "#d97706";
         }
       } catch (err) {
