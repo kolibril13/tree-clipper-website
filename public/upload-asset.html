@@ -77,8 +77,6 @@
     <span class="status-text"></span>
   </div>
 
-  <div class="prototype-warning">⚠️ Early Prototype. Work in progress. All data will be deleted every few hours.</div>
-
   <script type="module">
     import { supabase, ensureUsername } from "./auth.js";
     // Note: initLoginCorner is auto-called by auth.js, no need to call it here
@@ -518,5 +516,7 @@
       }
     };
   </script>
+  
+  <div class="prototype-warning">Early Prototype, data not yet persistent</div>
 </body>
 </html>
