@@ -52,10 +52,15 @@ export default {
       !url.pathname.startsWith("/api") &&
       !pathParts[1].includes(".")
     ) {
-      // This looks like /:username/:slug - serve asset.html
-      // The page will parse the path from the original URL
-      const assetPageRequest = new Request(new URL("/asset.html", url.origin).toString(), request);
-      return env.ASSETS.fetch(assetPageRequest);
+      // This looks like /:username/:slug - serve asset.html but keep the original URL
+      // Fetch asset.html from assets, but return it for the current URL
+      const assetHtmlResponse = await env.ASSETS.fetch(new Request(new URL("/asset.html", url.origin)));
+      
+      // Return the HTML with the same headers but for the original URL
+      return new Response(assetHtmlResponse.body, {
+        status: assetHtmlResponse.status,
+        headers: assetHtmlResponse.headers
+      });
     }
     
     // Let static assets be served by the assets handler
