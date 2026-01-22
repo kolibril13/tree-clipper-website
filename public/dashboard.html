@@ -110,9 +110,12 @@
   <div class="prototype-warning">⚠️ Early Prototype. Work in progress. All data will be deleted every few hours.</div>
 
   <script type="module">
-    import { supabase, initLoginCorner } from "./auth.js";
+    import { supabase, initLoginCorner, ensureUsername } from "./auth.js";
 
     initLoginCorner();
+    
+    // Ensure user has a username before showing dashboard
+    await ensureUsername();
 
     const loginPrompt = document.getElementById("login-prompt");
     const dashboardContent = document.getElementById("dashboard-content");
@@ -562,8 +565,18 @@
 
       // Handle new image upload
       if (selectedNewImage) {
+        // Get username for folder path
+        const profileRes = await fetch("/api/users/me", {
+          headers: { "Authorization": `Bearer ${currentSession.access_token}` }
+        });
+        const profile = await profileRes.json();
+        if (!profile?.username) {
+          showStatus("error", "Please set a username first");
+          return;
+        }
+        
         const ext = selectedNewImage.name.split(".").pop();
-        const filePath = `${currentSession.user.id}/asset-${Date.now()}.${ext}`;
+        const filePath = `${profile.username}/asset-${Date.now()}.${ext}`;
 
         const { error } = await supabase.storage
           .from("asset-images")

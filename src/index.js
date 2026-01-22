@@ -17,6 +17,17 @@ function getStoragePathFromUrl(imageUrl, bucketName) {
   return null;
 }
 
+// Username validation
+const USERNAME_REGEX = /^[a-z0-9][a-z0-9_-]*[a-z0-9]$|^[a-z0-9]$/;
+
+function isValidUsername(username) {
+  if (!username || typeof username !== "string") return false;
+  if (username.length < 3 || username.length > 20) return false;
+  if (!USERNAME_REGEX.test(username)) return false;
+  if (username.includes("--") || username.includes("__") || username.includes("-_") || username.includes("_-")) return false;
+  return true;
+}
+
 export default {
   async fetch(request, env) {
     const authHeader = request.headers.get("Authorization");
@@ -32,6 +43,127 @@ export default {
     );
 
     const url = new URL(request.url);
+
+    // ========== USER ROUTES ==========
+    
+    // GET /api/users/me - Get current user's profile
+    if (url.pathname === "/api/users/me" && request.method === "GET") {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !userData?.user) {
+        return new Response("Unauthorized", { status: 401 });
+      }
+      
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", userData.user.id)
+        .single();
+      
+      if (error) {
+        // User doesn't exist in users table yet
+        if (error.code === "PGRST116") {
+          return Response.json({ id: userData.user.id, username: null });
+        }
+        return new Response(error.message, { status: 500 });
+      }
+      
+      return Response.json(data);
+    }
+    
+    // GET /api/users/check?username=xxx - Check if username is available
+    if (url.pathname === "/api/users/check" && request.method === "GET") {
+      const username = url.searchParams.get("username")?.toLowerCase();
+      
+      if (!username) {
+        return Response.json({ available: false, error: "Missing username" });
+      }
+      
+      if (!isValidUsername(username)) {
+        return Response.json({ available: false, error: "Invalid username format" });
+      }
+      
+      const { data, error } = await supabase
+        .from("users")
+        .select("id")
+        .eq("username", username)
+        .single();
+      
+      // PGRST116 means no rows found = username is available
+      const available = error?.code === "PGRST116";
+      
+      return Response.json({ available });
+    }
+    
+    // POST /api/users/claim - Claim a username
+    if (url.pathname === "/api/users/claim" && request.method === "POST") {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !userData?.user) {
+        return new Response("Unauthorized", { status: 401 });
+      }
+      
+      // Check if user already has a username
+      const { data: existingUser } = await supabase
+        .from("users")
+        .select("username")
+        .eq("id", userData.user.id)
+        .single();
+      
+      if (existingUser?.username) {
+        return new Response("You already have a username", { status: 400 });
+      }
+      
+      const body = await request.json();
+      const username = body.username?.toLowerCase()?.trim();
+      
+      if (!isValidUsername(username)) {
+        return new Response("Invalid username format", { status: 400 });
+      }
+      
+      // Try to insert/upsert the user with username
+      const { error } = await supabase
+        .from("users")
+        .upsert({
+          id: userData.user.id,
+          username: username,
+          created_at: new Date().toISOString()
+        }, {
+          onConflict: "id"
+        });
+      
+      if (error) {
+        // Unique constraint violation = username taken
+        if (error.code === "23505") {
+          return new Response("Username is already taken", { status: 409 });
+        }
+        return new Response(error.message, { status: 500 });
+      }
+      
+      return new Response("Username claimed ✅", { status: 201 });
+    }
+    
+    // GET /api/users/:username - Get user by username (public)
+    if (url.pathname.startsWith("/api/users/") && request.method === "GET") {
+      const username = url.pathname.split("/api/users/")[1];
+      
+      if (!username || username === "me" || username === "check") {
+        // These are handled above
+        return new Response("Not found", { status: 404 });
+      }
+      
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, username, created_at")
+        .eq("username", username.toLowerCase())
+        .single();
+      
+      if (error) {
+        return new Response("User not found", { status: 404 });
+      }
+      
+      return Response.json(data);
+    }
 
     // ---------- PUBLIC READ ----------
     if (request.method === "GET") {
@@ -97,6 +229,17 @@ export default {
         return new Response("Unauthorized", { status: 401 });
       }
 
+      // Get username from users table
+      const { data: userProfile, error: profileError } = await supabase
+        .from("users")
+        .select("username")
+        .eq("id", userData.user.id)
+        .single();
+
+      if (profileError || !userProfile?.username) {
+        return new Response("Please set a username first", { status: 400 });
+      }
+
       const body = await request.json();
       if (!body?.assetData) {
         return new Response("Missing assetData", { status: 400 });
@@ -105,11 +248,8 @@ export default {
       const now = new Date().toISOString();
       const assetId = `asset-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-      const author =
-        userData.user.user_metadata?.custom_claims?.global_name ||
-        userData.user.user_metadata?.full_name ||
-        userData.user.user_metadata?.name ||
-        "Discord user";
+      // Use the username from our users table as the author
+      const author = userProfile.username;
 
       const { error } = await supabase
         .from("entries")

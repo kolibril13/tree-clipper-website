@@ -79,10 +79,13 @@
   <div class="prototype-warning">⚠️ Early Prototype. Work in progress. All data will be deleted every few hours.</div>
 
   <script type="module">
-    import { supabase, initLoginCorner } from "./auth.js";
+    import { supabase, initLoginCorner, ensureUsername } from "./auth.js";
 
     // Init login corner
     initLoginCorner();
+    
+    // Ensure user has a username before allowing uploads
+    await ensureUsername();
 
     const form = document.getElementById("asset-form");
     const loginPrompt = document.getElementById("login-prompt");
@@ -371,8 +374,18 @@
       let imageUrl = null;
 
       if (selectedImageFile) {
+        // Get username for folder path
+        const profileRes = await fetch("/api/users/me", {
+          headers: { "Authorization": `Bearer ${session.access_token}` }
+        });
+        const profile = await profileRes.json();
+        if (!profile?.username) {
+          showStatus("error", "Please set a username first");
+          return;
+        }
+        
         // selectedImageFile is already a compressed JPEG blob
-        const filePath = `${session.user.id}/asset-${Date.now()}.jpg`;
+        const filePath = `${profile.username}/asset-${Date.now()}.jpg`;
 
         const { error } = await supabase.storage
           .from("asset-images")
