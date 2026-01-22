@@ -48,6 +48,21 @@
           <textarea id="edit-asset-data" rows="4" required placeholder="TreeClipper::H4sIALGFY2kC/+1aW2/iOBT..."></textarea>
         </div>
 
+        <div id="edit-asset-meta" class="asset-meta" style="display: none;">
+          <div class="meta-row">
+            <span class="meta-label">Type</span>
+            <span id="edit-meta-node-type" class="meta-value"></span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Blender</span>
+            <span id="edit-meta-blender-version" class="meta-value"></span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">TreeClipper</span>
+            <span id="edit-meta-treeclipper-version" class="meta-value"></span>
+          </div>
+        </div>
+
         <div class="form-group">
           <label>Preview Image</label>
           <div class="current-image-preview" id="current-image-container">
@@ -126,10 +141,17 @@
     const deleteAssetId = document.getElementById("delete-asset-id");
     const deleteAssetName = document.getElementById("delete-asset-name");
 
+    // Edit meta elements
+    const editAssetMeta = document.getElementById("edit-asset-meta");
+    const editMetaNodeType = document.getElementById("edit-meta-node-type");
+    const editMetaBlenderVersion = document.getElementById("edit-meta-blender-version");
+    const editMetaTreeclipperVersion = document.getElementById("edit-meta-treeclipper-version");
+
     let currentSession = null;
     let statusTimeout;
     let selectedNewImage = null;
     let currentImageUrl = null;
+    let parsedAssetMeta = null;
 
     // ---------------- AUTH STATE ----------------
     function updateAuthUI(user) {
@@ -198,6 +220,21 @@
             ? `<img src="${escapeHtml(imageUrl)}" alt="" class="asset-thumb" loading="lazy">`
             : `<div class="asset-thumb-placeholder">📦</div>`;
           
+          // Build tags HTML
+          let tagsHtml = '';
+          if (entry.node_type || entry.blender_version) {
+            tagsHtml = '<div class="asset-tags">';
+            if (entry.node_type) {
+              const nodeLabel = formatNodeType(entry.node_type);
+              const nodeIcon = getNodeTypeIcon(entry.node_type);
+              tagsHtml += `<span class="asset-tag asset-tag--${entry.node_type}">${nodeIcon} ${nodeLabel}</span>`;
+            }
+            if (entry.blender_version) {
+              tagsHtml += `<span class="asset-tag asset-tag--blender">Blender ${escapeHtml(entry.blender_version)}</span>`;
+            }
+            tagsHtml += '</div>';
+          }
+          
           return `
             <li data-asset-id="${escapeHtml(entry.asset_id)}">
               <div class="dashboard-asset-row">
@@ -206,6 +243,7 @@
                   <div class="asset-info">
                     <span class="asset-title">${escapeHtml(title)}</span>
                     <span class="asset-date">${formatDate(entry.creation_date)}</span>
+                    ${tagsHtml}
                   </div>
                 </a>
                 <div class="asset-actions">
@@ -248,6 +286,119 @@
       });
     }
 
+    function formatNodeType(nodeType) {
+      const labels = {
+        'geonodes': 'Geo Nodes',
+        'shader': 'Shader',
+        'compositor': 'Compositor'
+      };
+      return labels[nodeType] || nodeType;
+    }
+
+    function getNodeTypeIcon(nodeType) {
+      const icons = {
+        'geonodes': '◇',
+        'shader': '◐',
+        'compositor': '▣'
+      };
+      return icons[nodeType] || '●';
+    }
+
+    function getNodeTypeLabel(nodeType) {
+      const labels = {
+        'geonodes': 'Geometry Nodes',
+        'shader': 'Shader',
+        'compositor': 'Compositor'
+      };
+      return labels[nodeType] || nodeType;
+    }
+
+    // ---------------- TREECLIPPER DECODING ----------------
+    function base64ToUint8Array(b64) {
+      b64 = b64.replace(/\s/g, '');
+      const binaryString = atob(b64);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return bytes;
+    }
+
+    async function ungzip(bytes) {
+      if (typeof DecompressionStream === "undefined") {
+        throw new Error("Browser does not support DecompressionStream");
+      }
+      const cs = new DecompressionStream('gzip');
+      const blob = new Blob([bytes]);
+      const decompressedStream = blob.stream().pipeThrough(cs);
+      const decompressed = await new Response(decompressedStream).arrayBuffer();
+      return new TextDecoder().decode(decompressed);
+    }
+
+    function mapBlIdnameToType(blIdname) {
+      const mapping = {
+        'GeometryNodeTree': 'geonodes',
+        'ShaderNodeTree': 'shader',
+        'CompositorNodeTree': 'compositor'
+      };
+      return mapping[blIdname] || blIdname || 'unknown';
+    }
+
+    async function decodeTreeClipperData(raw) {
+      if (!raw.startsWith('TreeClipper::')) return null;
+      const parts = raw.split('::');
+      if (parts.length !== 2) return null;
+      
+      try {
+        const bytes = base64ToUint8Array(parts[1]);
+        const json = await ungzip(bytes);
+        const obj = JSON.parse(json);
+        
+        // Extract metadata
+        const blenderVersion = obj.blender_version || null;
+        const treeclipperVersion = obj.tree_clipper_version || null;
+        
+        // Get node type from the last node_tree's bl_idname
+        let nodeType = null;
+        if (Array.isArray(obj.node_trees) && obj.node_trees.length > 0) {
+          const lastTree = obj.node_trees[obj.node_trees.length - 1];
+          const blIdname = lastTree?.data?.bl_idname;
+          nodeType = mapBlIdnameToType(blIdname);
+        }
+        
+        return {
+          blenderVersion,
+          treeclipperVersion,
+          nodeType
+        };
+      } catch (e) {
+        console.error("Failed to decode TreeClipper data:", e);
+        return null;
+      }
+    }
+
+    async function updateEditAssetMeta() {
+      const raw = editAssetData.value.trim();
+      if (!raw) {
+        editAssetMeta.style.display = "none";
+        parsedAssetMeta = null;
+        return;
+      }
+      
+      const meta = await decodeTreeClipperData(raw);
+      parsedAssetMeta = meta;
+      
+      if (meta && (meta.nodeType || meta.blenderVersion || meta.treeclipperVersion)) {
+        editMetaNodeType.textContent = meta.nodeType ? getNodeTypeLabel(meta.nodeType) : '—';
+        editMetaBlenderVersion.textContent = meta.blenderVersion || '—';
+        editMetaTreeclipperVersion.textContent = meta.treeclipperVersion || '—';
+        editAssetMeta.style.display = "";
+      } else {
+        editAssetMeta.style.display = "none";
+      }
+    }
+
     // ---------------- EDIT MODAL ----------------
     async function openEditModal(assetId) {
       try {
@@ -277,16 +428,24 @@
         editImageDropzone.classList.remove("has-image");
         editImageInput.value = "";
         
+        // Parse and display asset metadata
+        await updateEditAssetMeta();
+        
         editModal.style.display = "flex";
       } catch (err) {
         showStatus("error", "Failed to load asset details");
       }
     }
 
+    // Update metadata when asset data changes
+    editAssetData.addEventListener("input", updateEditAssetMeta);
+
     function closeEditModal() {
       editModal.style.display = "none";
       editForm.reset();
       selectedNewImage = null;
+      parsedAssetMeta = null;
+      editAssetMeta.style.display = "none";
     }
 
     document.getElementById("modal-close").addEventListener("click", closeEditModal);
@@ -423,7 +582,10 @@
       const payload = {
         title: editTitle.value.trim() || null,
         description: editDescription.value.trim() || null,
-        assetData: editAssetData.value.trim()
+        assetData: editAssetData.value.trim(),
+        nodeType: parsedAssetMeta?.nodeType || null,
+        blenderVersion: parsedAssetMeta?.blenderVersion || null,
+        treeclipperVersion: parsedAssetMeta?.treeclipperVersion || null
       };
 
       if (imageUrl !== undefined) {
