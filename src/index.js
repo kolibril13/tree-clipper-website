@@ -337,11 +337,15 @@ export default {
           return new Response("Could not generate unique slug", { status: 500 });
         }
       }
+      
+      // Keep asset_id for backwards compatibility
+      const assetId = `asset-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
       const { error } = await supabase
         .from("entries")
         .insert({
           user_id: userData.user.id,
+          asset_id: assetId,
           slug,
           author,
           asset_data: body.assetData,
