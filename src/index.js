@@ -52,7 +52,7 @@ export default {
       !url.pathname.startsWith("/api") &&
       !pathParts[1].includes(".")
     ) {
-      // This looks like /:username/:slug - redirect to asset.html with params
+      // This looks like /:username/:slug - serve asset.html with query params
       const [username, slug] = pathParts;
       const assetUrl = new URL("/asset.html", url.origin);
       assetUrl.searchParams.set("author", username);

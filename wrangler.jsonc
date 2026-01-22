@@ -3,7 +3,8 @@
   "compatibility_date": "2026-01-04",
   "main": "src/index.js",
   "assets": {
-    "directory": "./public"
+    "directory": "./public",
+    "binding": "ASSETS"
   },
   "vars": {
     "SUPABASE_URL": "https://msgozdhtfawuadxerkxq.supabase.co",
