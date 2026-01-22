@@ -204,6 +204,22 @@ a:hover {
     text-overflow: ellipsis;
 }
 
+.assets-list .asset-author .author-link {
+    color: #6b7280;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.assets-list .asset-author .author-link:hover {
+    color: #2072cc;
+    text-decoration: underline;
+}
+
+.assets-list .asset-date {
+    font-size: 0.8em;
+    color: #9ca3af;
+}
+
 .assets-list .asset-tags {
     display: flex;
     flex-wrap: wrap;
@@ -322,6 +338,15 @@ a:hover {
 
 .asset-meta strong {
     color: #374151;
+}
+
+.asset-meta .author-link {
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.asset-meta .author-link:hover {
+    text-decoration: underline;
 }
 
 .asset-meta .asset-description {
@@ -1161,3 +1186,40 @@ pre::-webkit-scrollbar {
     font-weight: 600;
 }
 
+/* ============================================
+   USER PROFILE PAGE
+   ============================================ */
+
+.user-header {
+    margin-bottom: 0.5em;
+}
+
+.user-header h1 {
+    margin-bottom: 0.2em;
+    padding-top: 1em;
+}
+
+.user-meta {
+    color: #9ca3af;
+    font-size: 0.9em;
+    margin: 0;
+}
+
+.user-stats {
+    display: flex;
+    gap: 0.6em;
+    margin-bottom: 1.2em;
+}
+
+.stat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    padding: 0.35em 0.8em;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 1px solid #bae6fd;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #0369a1;
+}

@@ -47,6 +47,23 @@ export default {
     
     // Check if this is a /:username/:slug route (not /api, not a file with extension)
     const pathParts = url.pathname.split("/").filter(Boolean);
+    
+    // /:username - user profile page
+    if (
+      pathParts.length === 1 &&
+      !url.pathname.startsWith("/api") &&
+      !pathParts[0].includes(".")
+    ) {
+      // This looks like /:username - serve user.html but keep the original URL
+      const userHtmlResponse = await env.ASSETS.fetch(new Request(new URL("/user.html", url.origin)));
+      
+      return new Response(userHtmlResponse.body, {
+        status: userHtmlResponse.status,
+        headers: userHtmlResponse.headers
+      });
+    }
+    
+    // /:username/:slug - asset page
     if (
       pathParts.length === 2 &&
       !url.pathname.startsWith("/api") &&
@@ -309,6 +326,7 @@ export default {
     // ---------- PUBLIC READ ----------
     if (request.method === "GET") {
       const mine = url.searchParams.get("mine");
+      const authorFilter = url.searchParams.get("author");
 
       // Get current user's assets only
       if (mine === "true") {
@@ -323,6 +341,21 @@ export default {
           .from("entries")
           .select("*")
           .eq("user_id", userData.user.id)
+          .order("creation_date", { ascending: false });
+
+        if (error) {
+          return new Response(error.message, { status: 500 });
+        }
+
+        return Response.json(data);
+      }
+
+      // Get entries by author username
+      if (authorFilter) {
+        const { data, error } = await supabase
+          .from("entries")
+          .select("*")
+          .eq("author", authorFilter.toLowerCase())
           .order("creation_date", { ascending: false });
 
         if (error) {
