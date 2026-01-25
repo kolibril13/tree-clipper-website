@@ -178,6 +178,26 @@ function handleClick(event) {
   navigate(path);
 }
 
+// Prefetch asset data on hover for faster navigation
+function handleMouseOver(event) {
+  const anchor = event.target.closest('a');
+  if (!anchor) return;
+  
+  const href = anchor.getAttribute('href');
+  if (!href || !href.startsWith('/')) return;
+  
+  // Check if this is an asset link (/:username/:slug pattern)
+  const match = matchRoute(href);
+  if (match.page === 'asset' && match.params.username && match.params.slug) {
+    // Dynamically import and prefetch
+    import('./pages/asset.js').then(module => {
+      if (module.prefetch) {
+        module.prefetch(match.params.username, match.params.slug);
+      }
+    }).catch(() => {}); // Ignore errors
+  }
+}
+
 // Handle browser back/forward
 function handlePopState(event) {
   const path = event.state?.path || window.location.pathname;
@@ -188,6 +208,9 @@ function handlePopState(event) {
 export function initRouter() {
   // Listen for clicks on the document
   document.addEventListener('click', handleClick);
+  
+  // Listen for hover to prefetch asset data
+  document.addEventListener('mouseover', handleMouseOver, { passive: true });
   
   // Listen for browser navigation
   window.addEventListener('popstate', handlePopState);

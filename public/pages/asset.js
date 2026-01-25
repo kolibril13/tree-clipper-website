@@ -1,5 +1,8 @@
 // Asset detail page
 
+// Asset cache for prefetched data
+const assetCache = new Map();
+
 export function title(params) {
   return `Asset - Tree Clipper`;
 }
@@ -13,7 +16,7 @@ export function template(params) {
     
     <div class="asset-layout">
       <div id="asset-img-container" class="asset-img-container">
-        <img id="asset-img" src="" class="asset-img">
+        <img id="asset-img" src="" class="asset-img" decoding="async">
       </div>
       <div class="copy-asset">
         <p>Asset data:</p>
@@ -29,22 +32,60 @@ export function template(params) {
   `;
 }
 
-export async function init(params) {
+// Cache DOM elements for faster access
+let elements = null;
+
+function getElements() {
+  if (!elements) {
+    elements = {
+      title: document.getElementById("asset-title"),
+      data: document.getElementById("asset-data"),
+      meta: document.getElementById("asset-meta"),
+      compat: document.getElementById("compat-info"),
+      img: document.getElementById("asset-img"),
+      imgContainer: document.getElementById("asset-img-container"),
+      copyBtn: document.getElementById("copy-button")
+    };
+  }
+  return elements;
+}
+
+export function init(params) {
+  // Reset element cache for new page
+  elements = null;
+  
+  const els = getElements();
+  
   // Set up copy button
-  const copyBtn = document.getElementById('copy-button');
-  if (copyBtn) {
-    copyBtn.addEventListener('click', copyAssetData);
+  if (els.copyBtn) {
+    els.copyBtn.addEventListener('click', copyAssetData);
   }
   
-  // Load asset
-  await loadAsset(params.username, params.slug);
+  // Start loading asset immediately (don't await - let it render progressively)
+  loadAsset(params.username, params.slug);
   
   // Return cleanup function
   return () => {
-    if (copyBtn) {
-      copyBtn.removeEventListener('click', copyAssetData);
+    if (els.copyBtn) {
+      els.copyBtn.removeEventListener('click', copyAssetData);
     }
+    elements = null;
   };
+}
+
+// Prefetch asset data (called on hover from router)
+export function prefetch(username, slug) {
+  const cacheKey = `${username}/${slug}`;
+  if (assetCache.has(cacheKey)) return;
+  
+  const apiUrl = `/api/asset/${encodeURIComponent(username)}/${encodeURIComponent(slug)}`;
+  
+  // Start fetch and cache the promise
+  const fetchPromise = fetch(apiUrl)
+    .then(res => res.ok ? res.json() : null)
+    .catch(() => null);
+  
+  assetCache.set(cacheKey, fetchPromise);
 }
 
 function copyAssetData() {
@@ -67,37 +108,50 @@ function copyAssetData() {
 }
 
 async function loadAsset(username, slug) {
+  const els = getElements();
+  
   if (!username || !slug) {
-    document.getElementById("asset-title").textContent = "No Asset";
-    document.getElementById("asset-data").textContent = "Please provide an asset in the URL";
+    els.title.textContent = "No Asset";
+    els.data.textContent = "Please provide an asset in the URL";
     return;
   }
   
+  const cacheKey = `${username}/${slug}`;
   const apiUrl = `/api/asset/${encodeURIComponent(username)}/${encodeURIComponent(slug)}`;
   
   try {
-    const res = await fetch(apiUrl);
-    
-    if (!res.ok) {
-      if (res.status === 404) {
-        document.getElementById("asset-title").textContent = "Asset Not Found";
-        document.getElementById("asset-data").textContent = "The requested asset does not exist";
-        return;
+    // Check cache first (from prefetch), otherwise fetch
+    let asset;
+    if (assetCache.has(cacheKey)) {
+      asset = await assetCache.get(cacheKey);
+      assetCache.delete(cacheKey); // Clear after use
+      if (!asset) throw new Error("Prefetch failed");
+    } else {
+      const res = await fetch(apiUrl);
+      
+      if (!res.ok) {
+        if (res.status === 404) {
+          els.title.textContent = "Asset Not Found";
+          els.data.textContent = "The requested asset does not exist";
+          return;
+        }
+        throw new Error(`HTTP ${res.status}`);
       }
-      throw new Error(`HTTP ${res.status}`);
+      
+      asset = await res.json();
     }
     
-    const asset = await res.json();
-    
+    // Batch DOM updates for better performance
     // Update page title
     document.title = `${asset.title || "Asset"} - Tree Clipper`;
     
     // Update title
-    const titleEl = document.getElementById("asset-title");
-    titleEl.textContent = asset.title || "Untitled Asset";
+    els.title.textContent = asset.title || "Untitled Asset";
+    
+    // Update asset data immediately (most important for user)
+    els.data.textContent = asset.asset_data || "No data available";
     
     // Update meta info (author, description, dates)
-    const metaEl = document.getElementById("asset-meta");
     const author = asset.author || "Unknown";
     const description = asset.description || "";
     const authorUrl = `/${encodeURIComponent(author)}`;
@@ -115,10 +169,9 @@ async function loadAsset(username, slug) {
       }
       metaHtml += `</span>`;
     }
-    metaEl.innerHTML = metaHtml;
+    els.meta.innerHTML = metaHtml;
     
     // Update compatibility info (node type, Blender version, TreeClipper version)
-    const compatEl = document.getElementById("compat-info");
     const hasCompatInfo = asset.node_type || asset.blender_version || asset.treeclipper_version;
     
     if (hasCompatInfo) {
@@ -138,39 +191,26 @@ async function loadAsset(username, slug) {
         compatHtml += `<span class="asset-tag asset-tag--treeclipper">TreeClipper ${escapeHtml(asset.treeclipper_version)}</span>`;
       }
       
-      compatEl.innerHTML = compatHtml;
-      compatEl.style.display = 'flex';
+      els.compat.innerHTML = compatHtml;
+      els.compat.style.display = 'flex';
     }
     
-    // Update asset data
-    const dataEl = document.getElementById("asset-data");
-    dataEl.textContent = asset.asset_data || "No data available";
-    
     // Update image if available
-    const imgEl = document.getElementById("asset-img");
-    const containerEl = document.getElementById("asset-img-container");
     const imageUrl = asset.image_data;
     
     if (imageUrl) {
-      // Preload image before showing
-      const preloadImg = new Image();
-      preloadImg.onload = () => {
-        imgEl.src = imageUrl;
-        containerEl.classList.add("loaded");
-      };
-      preloadImg.onerror = () => {
-        // Hide container if image fails to load
-        containerEl.classList.add("hidden");
-      };
-      preloadImg.src = imageUrl;
+      // Set src directly and let browser handle loading with decoding="async"
+      els.img.onload = () => els.imgContainer.classList.add("loaded");
+      els.img.onerror = () => els.imgContainer.classList.add("hidden");
+      els.img.src = imageUrl;
     } else {
       // No image for this asset - hide the container
-      containerEl.classList.add("hidden");
+      els.imgContainer.classList.add("hidden");
     }
   } catch (err) {
     console.error("Failed to load asset:", err);
-    document.getElementById("asset-title").textContent = "Error";
-    document.getElementById("asset-data").textContent = "Failed to load: " + err.message;
+    els.title.textContent = "Error";
+    els.data.textContent = "Failed to load: " + err.message;
   }
 }
 
