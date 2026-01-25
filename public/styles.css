@@ -419,22 +419,41 @@ a:hover {
     margin-bottom: 1em;
 }
 
-/* Asset image container */
+/* Asset image container - always visible with fixed square size */
 .asset-img-container {
     flex-shrink: 0;
+    width: 200px;
+    height: 200px;
+    border-radius: 12px;
+    background: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Hide container completely if asset has no image */
+.asset-img-container.hidden {
     display: none;
 }
 
-.asset-img-container.loaded {
-    display: block;
-}
-
 .asset-img {
-    max-width: 300px;
-    max-height: 250px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     display: block;
     box-sizing: border-box;
-    object-fit: contain;
+    object-fit: cover;
+    border-radius: 12px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.asset-img-container.loaded .asset-img {
+    opacity: 1;
 }
 
 .copy-asset {
@@ -454,7 +473,9 @@ a:hover {
     }
     .asset-img-container {
         width: 100%;
-        max-width: 100%;
+        max-width: 200px;
+        height: auto;
+        aspect-ratio: 1;
     }
 }
 

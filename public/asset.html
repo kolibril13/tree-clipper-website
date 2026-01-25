@@ -30,6 +30,10 @@
     <div id="asset-meta" class="asset-meta"></div>
 
     <script type="module">
+        // Initialize login corner immediately
+        import { initLoginCorner } from "/auth.js";
+        initLoginCorner();
+        
         async function loadAsset() {
             // Support clean URL /:username/:slug or query params ?author=&slug=
             const params = new URLSearchParams(window.location.search);
@@ -130,13 +134,20 @@
                 const imageUrl = asset.image_data;
                 
                 if (imageUrl) {
-                    // Preload image before showing to prevent any jumping
+                    // Preload image before showing
                     const preloadImg = new Image();
                     preloadImg.onload = () => {
                         imgEl.src = imageUrl;
                         containerEl.classList.add("loaded");
                     };
+                    preloadImg.onerror = () => {
+                        // Hide container if image fails to load
+                        containerEl.classList.add("hidden");
+                    };
                     preloadImg.src = imageUrl;
+                } else {
+                    // No image for this asset - hide the container
+                    containerEl.classList.add("hidden");
                 }
             } catch (err) {
                 console.error("Failed to load asset:", err);
@@ -182,7 +193,6 @@
     </script>
 
     <script src="/copy-asset.js"></script>
-    <script type="module" src="/auth.js"></script>
     
     <div class="prototype-warning">Early Prototype, data not yet persistent</div>
 </body>
