@@ -57,6 +57,57 @@ export default {
     // SPA routes - serve index.html for all non-file routes
     // This includes: /, /my-assets.html (without extension check), /:username, /:username/:slug, etc.
     else {
+      // Check if this is an asset page (/:username/:slug) for social media meta tags
+      if (pathParts.length === 2 && !pathParts[0].includes(".") && !pathParts[1].includes(".")) {
+        const [username, slug] = pathParts.map(p => decodeURIComponent(p).toLowerCase());
+        
+        // Fetch asset data for meta tags
+        const supabaseForMeta = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+        const { data: asset } = await supabaseForMeta
+          .from("entries")
+          .select("title, description, image_data, author")
+          .eq("author", username)
+          .eq("slug", slug)
+          .single();
+        
+        if (asset) {
+          // Get the base HTML
+          const spaResponse = await env.ASSETS.fetch(new Request(new URL("/index.html", url.origin)));
+          let html = await spaResponse.text();
+          
+          // Build meta tags
+          const title = asset.title || "Asset";
+          const description = asset.description || `By @${asset.author}`;
+          const imageUrl = asset.image_data || "";
+          const pageUrl = `${url.origin}/${encodeURIComponent(username)}/${encodeURIComponent(slug)}`;
+          
+          // Escape HTML entities in meta content
+          const escapeAttr = (str) => str.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          
+          const metaTags = `
+    <!-- Open Graph (works with Discord, Facebook, LinkedIn, etc.) -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="${escapeAttr(pageUrl)}">
+    <meta property="og:title" content="${escapeAttr(title)} - Tree Clipper">
+    <meta property="og:description" content="${escapeAttr(description)}">
+    ${imageUrl ? `<meta property="og:image" content="${escapeAttr(imageUrl)}">` : ""}
+`;
+          
+          // Inject meta tags before </head>
+          html = html.replace("</head>", `${metaTags}</head>`);
+          
+          // Also update the <title> tag
+          html = html.replace(/<title>.*?<\/title>/, `<title>${escapeAttr(title)} - Tree Clipper</title>`);
+          
+          return new Response(html, {
+            status: 200,
+            headers: {
+              "Content-Type": "text/html;charset=UTF-8",
+            }
+          });
+        }
+      }
+      
       // Serve the SPA shell (index.html) for all routes - client-side router handles the rest
       const spaResponse = await env.ASSETS.fetch(new Request(new URL("/index.html", url.origin)));
       
