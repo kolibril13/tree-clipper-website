@@ -287,8 +287,15 @@ export async function init() {
   styleEl.textContent = pageStyles;
   document.head.appendChild(styleEl);
   
-  // Ensure user has a username
-  await ensureUsername();
+  // Ensure user has a username - if this returns false, user was redirected
+  const hasUsername = await ensureUsername();
+  if (!hasUsername) {
+    // User was redirected to claim-username page, stop initialization
+    // Clean up styles we just added
+    const styleEl = document.getElementById('settings-styles');
+    if (styleEl) styleEl.remove();
+    return;
+  }
   
   const loginPrompt = document.getElementById("login-prompt");
   const pageContent = document.getElementById("page-content");

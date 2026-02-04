@@ -133,8 +133,12 @@ let cropState = {
 let handlers = {};
 
 export async function init() {
-  // Ensure user has a username
-  await ensureUsername();
+  // Ensure user has a username - if this returns false, user was redirected
+  const hasUsername = await ensureUsername();
+  if (!hasUsername) {
+    // User was redirected to claim-username page, stop initialization
+    return;
+  }
   
   const form = document.getElementById("asset-form");
   const loginPrompt = document.getElementById("login-prompt");
