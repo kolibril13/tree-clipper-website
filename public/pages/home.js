@@ -6,13 +6,30 @@ const PAGE_SIZE = 10;
 let currentOffset = 0;
 let hasMore = true;
 let isLoading = false;
+let currentFilters = {
+  nodeType: '',
+  search: ''
+};
 
 export function template() {
   return `
     <h1>Gallery</h1>
     
+    <div class="search-filter-bar">
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="Search assets..." autocomplete="off">
+        <span class="search-icon">🔍</span>
+      </div>
+      <div class="filter-buttons">
+        <button class="filter-btn active" data-filter="">All</button>
+        <button class="filter-btn" data-filter="shader">◐ Shader</button>
+        <button class="filter-btn" data-filter="geonodes">◇ Geo Nodes</button>
+        <button class="filter-btn" data-filter="compositor">▣ Compositor</button>
+      </div>
+    </div>
+    
     <div class="section-header">
-      <h2>Most Recent</h2>
+      <h2 id="results-label">Most Recent</h2>
     </div>
     
     <ul id="assets-list" class="assets-list">
@@ -36,6 +53,7 @@ export async function init() {
   currentOffset = 0;
   hasMore = true;
   isLoading = false;
+  currentFilters = { nodeType: '', search: '' };
   
   await loadAssets(true);
   
@@ -43,6 +61,73 @@ export async function init() {
   const loadMoreBtn = document.getElementById("load-more-btn");
   if (loadMoreBtn) {
     loadMoreBtn.addEventListener("click", () => loadAssets(false));
+  }
+  
+  // Set up filter buttons
+  const filterBtns = document.querySelectorAll(".filter-btn");
+  filterBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      // Update active state
+      filterBtns.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      
+      // Update filter and reload
+      currentFilters.nodeType = btn.dataset.filter || '';
+      resetAndReload();
+    });
+  });
+  
+  // Set up search input with debounce
+  const searchInput = document.getElementById("search-input");
+  let searchTimeout;
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        currentFilters.search = e.target.value.trim();
+        resetAndReload();
+      }, 300); // 300ms debounce
+    });
+    
+    // Clear search on Escape
+    searchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        searchInput.value = "";
+        currentFilters.search = "";
+        resetAndReload();
+      }
+    });
+  }
+}
+
+function resetAndReload() {
+  currentOffset = 0;
+  hasMore = true;
+  updateResultsLabel();
+  loadAssets(true);
+}
+
+function updateResultsLabel() {
+  const label = document.getElementById("results-label");
+  if (!label) return;
+  
+  const parts = [];
+  if (currentFilters.search) {
+    parts.push(`"${currentFilters.search}"`);
+  }
+  if (currentFilters.nodeType) {
+    const typeLabels = {
+      'geonodes': 'Geo Nodes',
+      'shader': 'Shader',
+      'compositor': 'Compositor'
+    };
+    parts.push(typeLabels[currentFilters.nodeType] || currentFilters.nodeType);
+  }
+  
+  if (parts.length > 0) {
+    label.textContent = `Results for ${parts.join(' in ')}`;
+  } else {
+    label.textContent = 'Most Recent';
   }
 }
 
@@ -63,12 +148,28 @@ async function loadAssets(isInitialLoad = false) {
   }
   
   try {
-    const res = await fetch(`/api/entries?limit=${PAGE_SIZE}&offset=${currentOffset}`);
+    // Build query params with filters
+    const params = new URLSearchParams({
+      limit: PAGE_SIZE,
+      offset: currentOffset
+    });
+    if (currentFilters.nodeType) {
+      params.set('node_type', currentFilters.nodeType);
+    }
+    if (currentFilters.search) {
+      params.set('search', currentFilters.search);
+    }
+    
+    const res = await fetch(`/api/entries?${params}`);
     const entries = await res.json();
     
     if (isInitialLoad) {
       if (!entries || entries.length === 0) {
-        listEl.innerHTML = '<li class="empty-item">No assets yet. Be the first to upload!</li>';
+        const hasFilters = currentFilters.nodeType || currentFilters.search;
+        const emptyMessage = hasFilters 
+          ? 'No assets found matching your filters. Try adjusting your search or filters.'
+          : 'No assets yet. Be the first to upload!';
+        listEl.innerHTML = `<li class="empty-item">${emptyMessage}</li>`;
         if (loadMoreContainer) loadMoreContainer.style.display = 'none';
         return;
       }

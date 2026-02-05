@@ -455,16 +455,33 @@ export default {
         return Response.json(data);
       }
 
-      // List all entries with pagination
+      // List all entries with pagination and optional filters
       const limit = parseInt(url.searchParams.get("limit")) || 10;
       const offset = parseInt(url.searchParams.get("offset")) || 0;
+      const nodeTypeFilter = url.searchParams.get("node_type");
+      const searchQuery = url.searchParams.get("search");
       
       // Cap limit to prevent abuse
       const cappedLimit = Math.min(limit, 100);
       
-      const { data, error } = await supabase
+      // Build query with optional filters
+      let query = supabase
         .from("entries")
-        .select("*")
+        .select("*");
+      
+      // Filter by node type if specified
+      if (nodeTypeFilter) {
+        query = query.eq("node_type", nodeTypeFilter);
+      }
+      
+      // Search in title and description if specified
+      if (searchQuery) {
+        // Use ilike for case-insensitive search across title and description
+        query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+      }
+      
+      // Apply ordering and pagination
+      const { data, error } = await query
         .order("creation_date", { ascending: false })
         .range(offset, offset + cappedLimit - 1);
 

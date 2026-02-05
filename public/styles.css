@@ -159,6 +159,97 @@ a:hover {
     text-decoration: underline;
 }
 
+/* Search and Filter Bar */
+.search-filter-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8em;
+    margin-bottom: 1.2em;
+}
+
+.search-box {
+    position: relative;
+    width: 100%;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 0.7em 1em 0.7em 2.5em;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.95em;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: #2072cc;
+    box-shadow: 0 0 0 3px rgba(32, 114, 204, 0.12);
+}
+
+.search-box input::placeholder {
+    color: #9ca3af;
+}
+
+.search-box .search-icon {
+    position: absolute;
+    left: 0.8em;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.9em;
+    color: #9ca3af;
+    pointer-events: none;
+}
+
+.filter-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4em;
+}
+
+.filter-btn {
+    padding: 0.45em 0.9em;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    background: #fff;
+    color: #6b7280;
+    font-size: 0.85em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.filter-btn:hover {
+    border-color: #d1d5db;
+    background: #f9fafb;
+    color: #374151;
+}
+
+.filter-btn.active {
+    background: #2072cc;
+    border-color: #2072cc;
+    color: white;
+}
+
+.filter-btn[data-filter="shader"].active {
+    background: #b45309;
+    border-color: #b45309;
+}
+
+.filter-btn[data-filter="geonodes"].active {
+    background: #065f46;
+    border-color: #065f46;
+}
+
+.filter-btn[data-filter="compositor"].active {
+    background: #5b21b6;
+    border-color: #5b21b6;
+}
+
 /* Section Header */
 .section-header {
     margin-bottom: 1rem;
