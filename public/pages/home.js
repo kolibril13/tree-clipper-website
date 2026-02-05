@@ -9,7 +9,7 @@ let isLoading = false;
 
 export function template() {
   return `
-    <h1>Tree Clipper</h1>
+    <h1>Gallery</h1>
     
     <div class="section-header">
       <h2>Most Recent</h2>
