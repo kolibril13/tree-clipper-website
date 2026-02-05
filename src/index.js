@@ -474,9 +474,9 @@ export default {
         query = query.eq("node_type", nodeTypeFilter);
       }
       
-      // Search in title and description if specified
+      // Search in title and description using ILIKE (case-insensitive contains)
+      // Scales fine up to ~10k rows. For larger datasets, add pg_trgm indexes.
       if (searchQuery) {
-        // Use ilike for case-insensitive search across title and description
         query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
       }
       
