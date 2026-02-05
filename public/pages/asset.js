@@ -9,7 +9,7 @@ export function title(params) {
 
 export function template(params) {
   return `
-    <a href="/" class="back-button">← Back to Gallery</a>
+    <a href="/" class="back-button">←</a>
     <h1>
       <span id="asset-title" style="color: #232323;">&nbsp;</span>
     </h1>
