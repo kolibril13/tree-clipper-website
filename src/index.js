@@ -434,7 +434,7 @@ export default {
 
         const { data, error } = await supabase
           .from("entries")
-          .select("*")
+          .select("title, author, slug, image_data, node_type, blender_version, creation_date")
           .eq("user_id", userData.user.id)
           .order("creation_date", { ascending: false });
 
@@ -449,7 +449,7 @@ export default {
       if (authorFilter) {
         const { data, error } = await supabase
           .from("entries")
-          .select("*")
+          .select("title, author, slug, image_data, node_type, blender_version, creation_date")
           .eq("author", authorFilter.toLowerCase())
           .order("creation_date", { ascending: false });
 
@@ -472,7 +472,7 @@ export default {
       // Build query with optional filters
       let query = supabase
         .from("entries")
-        .select("*");
+        .select("title, author, slug, image_data, node_type, blender_version, creation_date");
       
       // Filter by node type if specified
       if (nodeTypeFilter) {
