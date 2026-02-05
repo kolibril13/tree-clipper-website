@@ -110,6 +110,22 @@ body {
     border-color: #ccc;
 }
 
+.login-corner .upload-link {
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 0.9em;
+    font-weight: 500;
+    padding: 0.3em 0.6em;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.login-corner .upload-link:hover {
+    color: #374151;
+    background: #f3f4f6;
+    text-decoration: none;
+}
+
 .back-button {
     display: inline-flex;
     align-items: center;

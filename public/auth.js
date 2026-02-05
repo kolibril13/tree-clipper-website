@@ -84,7 +84,7 @@ function renderLoginCorner(user, profile) {
     corner.innerHTML = '';
     corner.insertAdjacentHTML(
       "afterbegin",
-      `<a href="/my-assets" class="login-status"></a><button class="logout-btn">Logout</button>`
+      `<a href="/upload-asset" class="upload-link">+ Upload</a><a href="/my-assets" class="login-status"></a><button class="logout-btn">Logout</button>`
     );
     corner.querySelector(".login-status").textContent = displayName;
 
@@ -95,6 +95,7 @@ function renderLoginCorner(user, profile) {
     });
   } else {
     corner.innerHTML = `
+      <a href="/upload-asset" class="upload-link">+ Upload</a>
       <button class="login-btn">Login with Discord</button>
     `;
 

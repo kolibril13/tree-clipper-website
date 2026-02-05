@@ -39,8 +39,6 @@ export function template() {
     <div id="load-more-container" class="load-more-container" style="display: none;">
       <button id="load-more-btn" class="load-more-btn">Load More</button>
     </div>
-
-    <a href="/upload-asset" class="upload-btn">+ Upload Asset</a>
     
     <footer class="site-footer">
       <a href="/terms">Terms</a> · <a href="/imprint">Imprint</a>
