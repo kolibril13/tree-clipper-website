@@ -26,27 +26,34 @@ async function handleCallback() {
     return;
   }
 
+  let exchangeError = null;
+
   // If we have an authorization code, exchange it for a session
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
+      exchangeError = error;
       console.error("Failed to exchange code:", error);
-      window.location.replace("/?error=" + encodeURIComponent(error.message));
-      return;
     }
   }
 
   // Now check if we have a session (either from code exchange or hash tokens)
   const { data: { session } } = await supabase.auth.getSession();
-  
+
   if (session) {
     // Successfully authenticated - redirect to home
     window.location.replace("/");
-  } else {
-    // No session obtained - something went wrong
-    console.error("No session after callback");
-    window.location.replace("/?error=auth_failed");
+    return;
   }
+
+  // No session obtained - surface the most relevant error
+  if (exchangeError) {
+    window.location.replace("/?error=" + encodeURIComponent(exchangeError.message));
+    return;
+  }
+
+  console.error("No session after callback");
+  window.location.replace("/?error=auth_failed");
 }
 
 handleCallback();
