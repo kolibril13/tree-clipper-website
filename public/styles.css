@@ -75,23 +75,76 @@ body {
     text-decoration: underline;
 }
 
-.login-corner .login-btn {
-    padding: 0.3em 0.7em;
-    background: #5865F2;
-    color: white;
+.login-corner .login-link {
+    background: none;
     border: none;
-    border-radius: 4px;
+    color: #6b7280;
     cursor: pointer;
     font-size: 0.9em;
     font-weight: 500;
-    transition: all 0.2s ease;
-    text-decoration: none;
-    display: inline-block;
+    padding: 0.3em 0.5em;
+    transition: color 0.2s ease;
+    font-family: inherit;
 }
 
-.login-corner .login-btn:hover {
-    background: #4752C4;
-    text-decoration: none;
+.login-corner .login-link:hover {
+    color: #374151;
+}
+
+/* Login Dropdown */
+.login-dropdown {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    padding: 0.5em;
+    min-width: 200px;
+    z-index: 100;
+    animation: dropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.login-option {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    width: 100%;
+    padding: 0.7em 0.9em;
+    border: none;
+    background: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 500;
+    color: #374151;
+    transition: background 0.15s ease;
+    font-family: inherit;
+    text-align: left;
+}
+
+.login-option:hover {
+    background: #f3f4f6;
+}
+
+.login-option--discord {
+    color: #5865F2;
+}
+
+.login-option--discord:hover {
+    background: #f0f1fe;
+}
+
+.login-option-icon {
+    flex-shrink: 0;
 }
 
 .login-corner .logout-btn {
