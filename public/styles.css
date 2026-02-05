@@ -1488,3 +1488,25 @@ pre::-webkit-scrollbar {
     font-weight: 600;
     color: #0369a1;
 }
+
+/* ============================================
+   BLENDER EXTENSION HINT
+   ============================================ */
+
+.extension-hint {
+    font-size: 0.85em;
+    color: #9ca3af;
+    margin-bottom: 1.5em;
+}
+
+.extension-hint-icon {
+    margin-right: 0.2em;
+}
+
+.extension-hint a {
+    color: #6b7280;
+}
+
+.extension-hint a:hover {
+    color: #2072cc;
+}

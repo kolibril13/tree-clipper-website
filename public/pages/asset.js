@@ -29,6 +29,11 @@ export function template(params) {
     <div id="compat-info" class="asset-tags-detail" style="display: none;"></div>
     
     <div id="asset-meta" class="asset-meta"></div>
+    
+    <!-- Blender extension reference -->
+    <div class="extension-hint">
+      Import this asset in Blender using the <a href="https://extensions.blender.org/add-ons/tree-clipper/" target="_blank" rel="noopener">Tree Clipper extension</a>
+    </div>
   `;
 }
 
