@@ -50,6 +50,11 @@ export default {
     if (url.pathname.startsWith("/api")) {
       // Continue to API handling below
     }
+    // Auth callback should serve its own HTML entry (not the SPA shell)
+    else if (url.pathname === "/auth/callback" || url.pathname === "/auth/callback/") {
+      const callbackHtml = new URL("/auth/callback/index.html", url.origin);
+      return env.ASSETS.fetch(new Request(callbackHtml));
+    }
     // Static assets (files with extensions) - serve directly
     else if (pathParts.length > 0 && pathParts[pathParts.length - 1].includes(".")) {
       return env.ASSETS.fetch(request);

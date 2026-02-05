@@ -4,6 +4,32 @@ import { resolve } from 'path';
 export default defineConfig({
   // Source files are in /public, output goes to /dist
   root: 'public',
+
+  plugins: [
+    {
+      name: 'auth-callback-rewrite',
+      configureServer(server) {
+        server.middlewares.use((req, _res, next) => {
+          if (!req.url) return next();
+          const [path, query] = req.url.split('?');
+          if (path === '/auth/callback' || path === '/auth/callback/') {
+            req.url = `/auth/callback/index.html${query ? `?${query}` : ''}`;
+          }
+          next();
+        });
+      },
+      configurePreviewServer(server) {
+        server.middlewares.use((req, _res, next) => {
+          if (!req.url) return next();
+          const [path, query] = req.url.split('?');
+          if (path === '/auth/callback' || path === '/auth/callback/') {
+            req.url = `/auth/callback/index.html${query ? `?${query}` : ''}`;
+          }
+          next();
+        });
+      },
+    },
+  ],
   
   build: {
     // Output to /dist (relative to project root, not /public)
