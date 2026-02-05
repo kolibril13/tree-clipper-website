@@ -1,5 +1,5 @@
 // Claim username page
-import { supabase } from '/auth.js';
+import { supabase, clearCachedProfile } from '/auth.js';
 
 export const title = 'Choose Your Username – Tree Clipper';
 
@@ -266,6 +266,8 @@ async function handleSubmit(e) {
     
     if (res.ok) {
       showStatus("success", "Username claimed! Redirecting...");
+      // Clear cached profile so the next page fetches the new username
+      clearCachedProfile();
       setTimeout(() => {
         window.spaNavigate('/my-assets');
       }, 1000);
