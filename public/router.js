@@ -38,6 +38,11 @@ function matchRoute(path) {
   // Normalize path
   const normalizedPath = path === '' ? '/' : path;
   
+  // Skip auth callback - let it handle itself (full page load)
+  if (normalizedPath.startsWith('/auth/')) {
+    return { page: null, params: {} };
+  }
+  
   // Check static routes first
   for (const route of routes) {
     if (route.path === normalizedPath) {
@@ -94,6 +99,15 @@ export async function navigate(path, pushState = true) {
     return;
   }
   
+  // Match route
+  const { page, params } = matchRoute(path);
+  
+  // If page is null, do a full page navigation (e.g., auth callback)
+  if (page === null) {
+    window.location.href = path;
+    return;
+  }
+  
   // Run cleanup for current page
   if (currentCleanup) {
     try {
@@ -103,9 +117,6 @@ export async function navigate(path, pushState = true) {
     }
     currentCleanup = null;
   }
-  
-  // Match route
-  const { page, params } = matchRoute(path);
   
   // Update URL
   if (pushState) {
