@@ -147,6 +147,19 @@ body {
     flex-shrink: 0;
 }
 
+.login-beta-badge {
+    margin-left: auto;
+    padding: 0.15em 0.45em;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+    font-size: 0.65em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 4px;
+    border: 1px solid #f59e0b;
+}
+
 /* Login Divider */
 .login-divider {
     display: flex;
