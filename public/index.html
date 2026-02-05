@@ -15,12 +15,19 @@
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+    <!-- Logo - top left -->
+    <a href="/" class="site-logo">
+        <img src="/icon.svg" alt="Tree Clipper" class="logo-img">
+        <span class="logo-text">Tree Clipper</span>
+    </a>
+    
     <!-- Login corner - rendered once, persists across page navigations -->
     <div class="login-corner"></div>
     
     <!-- SPA content container - page content loaded here dynamically -->
     <div id="spa-content"></div>
     
+    <!-- Prototype warning - bottom left -->
     <div class="prototype-warning">Early Prototype, data not yet persistent</div>
     
     <script type="module">
