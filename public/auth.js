@@ -73,13 +73,14 @@ function renderLoginCorner(user, profile) {
   if (!corner) return;
 
   if (user) {
-    // Prefer username from our users table, fallback to Discord name
+    // Prefer username from our users table, fallback to provider name or email
     const displayName = profile?.username 
       ? `@${profile.username}`
       : (user.user_metadata?.custom_claims?.global_name ??
          user.user_metadata?.full_name ??
          user.user_metadata?.name ??
-         "Discord user");
+         user.email ??
+         "Set username");
     
     corner.innerHTML = '';
     corner.insertAdjacentHTML(
