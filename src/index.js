@@ -39,6 +39,11 @@ function normalizeNodeType(nodeType) {
   return normalized;
 }
 
+function internalError(context, error) {
+  console.error(`[${context}]`, error);
+  return new Response("Internal server error", { status: 500 });
+}
+
 // Generate URL-safe slug from title
 function generateSlug(title) {
   if (!title) return null;
@@ -177,7 +182,7 @@ export default {
         if (error.code === "PGRST116") {
           return Response.json({ id: userData.user.id, username: null });
         }
-        return new Response(error.message, { status: 500 });
+        return internalError("users/me fetch profile", error);
       }
       
       return Response.json(data);
@@ -249,7 +254,7 @@ export default {
         if (error.code === "23505") {
           return new Response("Username is already taken", { status: 409 });
         }
-        return new Response(error.message, { status: 500 });
+        return internalError("users/claim upsert", error);
       }
       
       return new Response("Username claimed ✅", { status: 201 });
@@ -297,7 +302,7 @@ export default {
         .eq("id", userId);
       
       if (deleteUserError) {
-        return new Response(deleteUserError.message, { status: 500 });
+        return internalError("users/me delete profile", deleteUserError);
       }
       
       return new Response("Account deleted", { status: 200 });
@@ -451,7 +456,7 @@ export default {
           .order("creation_date", { ascending: false });
 
         if (error) {
-          return new Response(error.message, { status: 500 });
+          return internalError("entries list mine", error);
         }
 
         return Response.json(data);
@@ -466,7 +471,7 @@ export default {
           .order("creation_date", { ascending: false });
 
         if (error) {
-          return new Response(error.message, { status: 500 });
+          return internalError("entries list by author", error);
         }
 
         return Response.json(data);
@@ -503,7 +508,7 @@ export default {
         .range(offset, offset + cappedLimit - 1);
 
       if (error) {
-        return new Response(error.message, { status: 500 });
+        return internalError("entries list", error);
       }
 
       return Response.json(data);
@@ -596,7 +601,7 @@ export default {
         });
 
       if (error) {
-        return new Response(error.message, { status: 500 });
+        return internalError("entries create", error);
       }
 
       return Response.json({ slug, author }, { status: 201 });
@@ -669,7 +674,7 @@ export default {
         .eq("slug", existing.slug);
 
       if (error) {
-        return new Response(error.message, { status: 500 });
+        return internalError("entries update", error);
       }
 
       return new Response("Asset updated ✅", { status: 200 });
@@ -722,7 +727,7 @@ export default {
         .eq("slug", existing.slug);
 
       if (error) {
-        return new Response(error.message, { status: 500 });
+        return internalError("entries delete", error);
       }
 
       return new Response("Asset deleted ✅", { status: 200 });
