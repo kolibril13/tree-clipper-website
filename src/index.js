@@ -44,6 +44,45 @@ function internalError(context, error) {
   return new Response("Internal server error", { status: 500 });
 }
 
+function buildContentSecurityPolicy(env) {
+  const connectSrc = new Set(["'self'", "https://*.supabase.co", "wss://*.supabase.co"]);
+
+  try {
+    connectSrc.add(new URL(env.SUPABASE_URL).origin);
+  } catch {
+    // Ignore invalid/missing URL; fallback sources still apply.
+  }
+
+  return [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data:",
+    `connect-src ${Array.from(connectSrc).join(" ")}`,
+  ].join("; ");
+}
+
+function withSecurityHeaders(response, env) {
+  const safeResponse = response instanceof Response ? response : new Response(response);
+  const headers = new Headers(safeResponse.headers);
+
+  headers.set("Content-Security-Policy", buildContentSecurityPolicy(env));
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set("X-Frame-Options", "DENY");
+
+  return new Response(safeResponse.body, {
+    status: safeResponse.status,
+    statusText: safeResponse.statusText,
+    headers,
+  });
+}
+
 // Generate URL-safe slug from title
 function generateSlug(title) {
   if (!title) return null;
@@ -59,9 +98,11 @@ function generateSlug(title) {
 
 export default {
   async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-    const pathParts = url.pathname.split("/").filter(Boolean);
-    const isEntriesRoute = url.pathname === "/api/entries" || url.pathname === "/api/entries/";
+    return withSecurityHeaders(
+      await (async () => {
+        const url = new URL(request.url);
+        const pathParts = url.pathname.split("/").filter(Boolean);
+        const isEntriesRoute = url.pathname === "/api/entries" || url.pathname === "/api/entries/";
     
     // API routes are handled below
     if (url.pathname.startsWith("/api")) {
@@ -733,10 +774,13 @@ export default {
       return new Response("Asset deleted ✅", { status: 200 });
     }
 
-    if (isEntriesRoute) {
-      return new Response("Method not allowed", { status: 405 });
-    }
+        if (isEntriesRoute) {
+          return new Response("Method not allowed", { status: 405 });
+        }
 
-    return new Response("Not found", { status: 404 });
+        return new Response("Not found", { status: 404 });
+      })(),
+      env
+    );
   }
 };
