@@ -185,7 +185,8 @@ async function loadAsset(username, slug) {
       if (asset.node_type) {
         const nodeTypeLabel = formatNodeType(asset.node_type);
         const nodeTypeIcon = getNodeTypeIcon(asset.node_type);
-        compatHtml += `<span class="asset-tag asset-tag--${asset.node_type}">${nodeTypeIcon} ${nodeTypeLabel}</span>`;
+        const nodeTypeClass = getNodeTypeClass(asset.node_type);
+        compatHtml += `<span class="asset-tag ${nodeTypeClass}">${nodeTypeIcon} ${escapeHtml(nodeTypeLabel)}</span>`;
       }
       
       if (asset.blender_version) {
@@ -235,19 +236,31 @@ function formatDate(isoString) {
 }
 
 function formatNodeType(nodeType) {
+  const normalized = typeof nodeType === "string" ? nodeType.toLowerCase() : "";
   const labels = {
     'geonodes': 'Geometry Nodes',
     'shader': 'Shader',
     'compositor': 'Compositor'
   };
-  return labels[nodeType] || nodeType;
+  return labels[normalized] || 'Unknown';
 }
 
 function getNodeTypeIcon(nodeType) {
+  const normalized = typeof nodeType === "string" ? nodeType.toLowerCase() : "";
   const icons = {
     'geonodes': '◇',
     'shader': '◐',
     'compositor': '▣'
   };
-  return icons[nodeType] || '●';
+  return icons[normalized] || '●';
+}
+
+function getNodeTypeClass(nodeType) {
+  const normalized = typeof nodeType === "string" ? nodeType.toLowerCase() : "";
+  const classes = {
+    'geonodes': 'asset-tag--geonodes',
+    'shader': 'asset-tag--shader',
+    'compositor': 'asset-tag--compositor'
+  };
+  return classes[normalized] || 'asset-tag--unknown';
 }

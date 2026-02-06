@@ -19,6 +19,7 @@ function getStoragePathFromUrl(imageUrl, bucketName) {
 
 // Username validation
 const USERNAME_REGEX = /^[a-z0-9][a-z0-9_-]*[a-z0-9]$|^[a-z0-9]$/;
+const NODE_TYPE_REGEX = /^[a-z0-9_-]{1,32}$/;
 
 function isValidUsername(username) {
   if (!username || typeof username !== "string") return false;
@@ -26,6 +27,16 @@ function isValidUsername(username) {
   if (!USERNAME_REGEX.test(username)) return false;
   if (username.includes("--") || username.includes("__") || username.includes("-_") || username.includes("_-")) return false;
   return true;
+}
+
+// Keep node_type URL/class-safe and bounded.
+function normalizeNodeType(nodeType) {
+  if (nodeType === undefined || nodeType === null || nodeType === "") return null;
+  if (typeof nodeType !== "string") return null;
+
+  const normalized = nodeType.toLowerCase().trim();
+  if (!NODE_TYPE_REGEX.test(normalized)) return null;
+  return normalized;
 }
 
 // Generate URL-safe slug from title
@@ -526,6 +537,16 @@ export default {
         return new Response("Title is required", { status: 400 });
       }
 
+      const normalizedNodeType = normalizeNodeType(body.nodeType);
+      if (
+        body.nodeType !== undefined &&
+        body.nodeType !== null &&
+        body.nodeType !== "" &&
+        !normalizedNodeType
+      ) {
+        return new Response("Invalid node type", { status: 400 });
+      }
+
       const now = new Date().toISOString();
       const author = userProfile.username;
       
@@ -566,7 +587,7 @@ export default {
           title: body.title.trim(),
           description: body.description,
           image_data: body.imageData,
-          node_type: body.nodeType || null,
+          node_type: normalizedNodeType,
           blender_version: body.blenderVersion || null,
           treeclipper_version: body.treeclipperVersion || null,
           creation_date: now,
@@ -622,7 +643,13 @@ export default {
       if (body.description !== undefined) updates.description = body.description;
       if (body.assetData !== undefined) updates.asset_data = body.assetData;
       if (body.imageData !== undefined) updates.image_data = body.imageData;
-      if (body.nodeType !== undefined) updates.node_type = body.nodeType;
+      if (body.nodeType !== undefined) {
+        const normalizedNodeType = normalizeNodeType(body.nodeType);
+        if (body.nodeType !== null && body.nodeType !== "" && !normalizedNodeType) {
+          return new Response("Invalid node type", { status: 400 });
+        }
+        updates.node_type = normalizedNodeType;
+      }
       if (body.blenderVersion !== undefined) updates.blender_version = body.blenderVersion;
       if (body.treeclipperVersion !== undefined) updates.treeclipper_version = body.treeclipperVersion;
 
