@@ -10,7 +10,7 @@ export function template() {
     <h1>My Assets</h1>
 
     <div id="login-prompt" class="login-prompt">
-      <p>Please log in with Discord to view your assets.</p>
+      <p>Please log in to view your assets.</p>
     </div>
 
     <div id="page-content" style="display: none;">

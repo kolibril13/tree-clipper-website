@@ -198,7 +198,7 @@ export function template() {
     <h1>Settings</h1>
 
     <div id="login-prompt" class="login-prompt">
-      <p>Please log in with Discord to view your settings.</p>
+      <p>Please log in to view your settings.</p>
     </div>
 
     <div id="page-content" style="display: none;">

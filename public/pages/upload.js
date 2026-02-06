@@ -10,7 +10,7 @@ export function template() {
     <h1>Upload Asset</h1>
 
     <div id="login-prompt" class="login-prompt">
-      <p>Please log in with Discord to upload assets.</p>
+      <p>Please log in to upload assets.</p>
     </div>
 
     <form id="asset-form" class="asset-form" style="display: none;">
