@@ -38,7 +38,7 @@ export function template() {
         
         <div class="warning-box">
           <strong>⚠️ Cannot be changed later</strong>
-          Your username will appear in all your asset links (e.g. treeclipper.xyz/<strong>@yourname</strong>/asset-name). 
+          Your username will appear in all your asset links (e.g. tree-clipper.com/<strong>@yourname</strong>/asset-name). 
           Choose wisely!
         </div>
         
