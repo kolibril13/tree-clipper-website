@@ -132,7 +132,6 @@ function showLoginDropdown(anchor) {
           <path d="M22 6L12 13L2 6"/>
         </svg>
         Login with Email
-        <span class="login-beta-badge">BETA</span>
       </button>
     </div>
     <div class="login-email-form" style="display: none;">
