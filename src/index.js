@@ -56,6 +56,7 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const pathParts = url.pathname.split("/").filter(Boolean);
+    const isEntriesRoute = url.pathname === "/api/entries" || url.pathname === "/api/entries/";
     
     // API routes are handled below
     if (url.pathname.startsWith("/api")) {
@@ -430,7 +431,7 @@ export default {
     }
 
     // ---------- PUBLIC READ ----------
-    if (request.method === "GET") {
+    if (isEntriesRoute && request.method === "GET") {
       const mine = url.searchParams.get("mine");
       const authorFilter = url.searchParams.get("author");
 
@@ -509,7 +510,7 @@ export default {
     }
 
     // ---------- AUTH CREATE ----------
-    if (request.method === "POST") {
+    if (isEntriesRoute && request.method === "POST") {
       const { data: userData, error: userError } =
         await supabase.auth.getUser();
 
@@ -602,7 +603,7 @@ export default {
     }
 
     // ---------- AUTH UPDATE ----------
-    if (request.method === "PUT") {
+    if (isEntriesRoute && request.method === "PUT") {
       const { data: userData, error: userError } =
         await supabase.auth.getUser();
 
@@ -675,7 +676,7 @@ export default {
     }
 
     // ---------- AUTH DELETE ----------
-    if (request.method === "DELETE") {
+    if (isEntriesRoute && request.method === "DELETE") {
       const { data: userData, error: userError } =
         await supabase.auth.getUser();
 
@@ -727,6 +728,10 @@ export default {
       return new Response("Asset deleted ✅", { status: 200 });
     }
 
-    return new Response("Method not allowed", { status: 405 });
+    if (isEntriesRoute) {
+      return new Response("Method not allowed", { status: 405 });
+    }
+
+    return new Response("Not found", { status: 404 });
   }
 };
