@@ -36,8 +36,10 @@ export default defineConfig({
     outDir: '../dist',
     emptyOutDir: true,
     
-    // Generate source maps for debugging
-    sourcemap: true,
+    // Keep source maps off by default in production.
+    // Enable only when explicitly needed:
+    // BUILD_SOURCEMAP=true npm run build
+    sourcemap: process.env.BUILD_SOURCEMAP === 'true',
     
     // Rollup options for code splitting
     rollupOptions: {

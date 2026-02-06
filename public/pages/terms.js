@@ -20,7 +20,7 @@ export function template() {
       </ul>
       
       <h2>No Warranty</h2>
-      <p>This is an early prototype. Data may be deleted. Use at your own risk.</p>
+      <p>This service is provided as-is, without warranties of any kind. Use at your own risk.</p>
     </div>
     
     <p style="margin-top: 2em;"><a href="/imprint">Imprint</a></p>

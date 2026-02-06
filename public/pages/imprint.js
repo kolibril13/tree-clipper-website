@@ -32,9 +32,6 @@ export function template() {
     <p style="margin-top: 2em;">
       <a href="/terms" class="styled-link">Terms &amp; Conditions</a>
     </p>
-    <div class="imprint-footnote">
-      <small>Early Prototype, data not yet persistent</small>
-    </div>
   `;
 }
 

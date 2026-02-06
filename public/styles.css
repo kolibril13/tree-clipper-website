@@ -44,15 +44,6 @@ body {
     text-decoration: none;
 }
 
-/* Prototype Warning - subtle, bottom left of frame */
-.prototype-warning {
-    position: absolute;
-    bottom: 0.7em;
-    left: 1em;
-    font-size: 0.7em;
-    color: #9ca3af;
-}
-
 /* Login corner component */
 .login-corner {
     position: absolute;
