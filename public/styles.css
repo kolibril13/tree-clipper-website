@@ -1648,9 +1648,15 @@ pre::-webkit-scrollbar {
 
 .cropper-actions {
     display: flex;
-    gap: 0.8em;
-    margin-top: 1.2em;
+    gap: 1em;
+    margin-top: 1.5em;
     justify-content: flex-end;
+}
+
+.cropper-actions .btn-primary,
+.cropper-actions .btn-secondary {
+    padding: 0.85em 2em;
+    font-size: 1.05em;
 }
 
 /* ============================================
