@@ -12,6 +12,7 @@
     "wrangler": "^4.59.2"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.90.1"
+    "@supabase/supabase-js": "^2.90.1",
+    "cropperjs": "^1.6.1"
   }
 }

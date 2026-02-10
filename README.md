@@ -35,6 +35,8 @@ npm install
 
 # Start local dev server
 npx wrangler dev
+
+npm run dev
 ```
 
 ## License

@@ -1,5 +1,7 @@
 // My Assets page
 import { supabase, ensureUsername } from '/auth.js';
+import Cropper from 'cropperjs';
+import 'cropperjs/dist/cropper.css';
 
 export const title = 'My Assets – Tree Clipper';
 
@@ -110,7 +112,7 @@ export function template() {
       <span class="status-text"></span>
     </div>
 
-    <!-- Image Cropper Modal -->
+    <!-- Image Cropper Modal (Cropper.js) -->
     <div id="cropper-modal" class="cropper-overlay" style="display: none;">
       <div class="cropper-modal">
         <div class="cropper-header">
@@ -119,15 +121,8 @@ export function template() {
             <p>Drag to move, drag corners to resize. Thumbnail will be square.</p>
           </div>
         </div>
-        <div class="cropper-container" id="cropper-container">
-          <img id="cropper-image" class="cropper-image" alt="Crop preview" />
-          <div class="crop-area" id="crop-area">
-            <div class="crop-handle crop-handle--nw" data-handle="nw"></div>
-            <div class="crop-handle crop-handle--ne" data-handle="ne"></div>
-            <div class="crop-handle crop-handle--sw" data-handle="sw"></div>
-            <div class="crop-handle crop-handle--se" data-handle="se"></div>
-          </div>
-          <div class="crop-size-indicator" id="crop-size-indicator"></div>
+        <div class="cropper-wrap" id="cropper-container">
+          <img id="cropper-image" alt="Crop preview" />
         </div>
         <div class="cropper-actions">
           <button type="button" class="btn-cancel-crop" id="cancel-crop">Cancel</button>
@@ -147,25 +142,7 @@ let deleteAuthor = null;
 let deleteSlug = null;
 let pendingImageFile = null;
 
-let cropState = {
-  imageWidth: 0,
-  imageHeight: 0,
-  containerWidth: 0,
-  containerHeight: 0,
-  offsetX: 0,
-  offsetY: 0,
-  cropX: 0,
-  cropY: 0,
-  cropSize: 100,
-  dragging: false,
-  resizing: false,
-  resizeHandle: null,
-  startX: 0,
-  startY: 0,
-  startCropX: 0,
-  startCropY: 0,
-  startCropSize: 0
-};
+let cropperInstance = null;
 
 let handlers = {};
 
@@ -221,8 +198,7 @@ function setupEventListeners() {
   const editRemoveImage = document.getElementById("edit-remove-image");
   const removeCurrentImageBtn = document.getElementById("remove-current-image");
   const deleteModal = document.getElementById("delete-modal");
-  const cropArea = document.getElementById("crop-area");
-  
+
   handlers.modalClose = () => closeEditModal();
   handlers.cancelEdit = () => closeEditModal();
   handlers.modalOverlayClick = (e) => { if (e.target === editModal) closeEditModal(); };
@@ -258,9 +234,6 @@ function setupEventListeners() {
   handlers.deleteModalClick = (e) => { if (e.target === deleteModal) closeDeleteModal(); };
   handlers.confirmDelete = handleConfirmDelete;
   
-  handlers.cropStart = handleCropStart;
-  handlers.cropMove = handleCropMove;
-  handlers.cropEnd = handleCropEnd;
   handlers.cancelCrop = closeCropper;
   handlers.confirmCrop = handleConfirmCrop;
   
@@ -312,21 +285,16 @@ function setupEventListeners() {
   document.getElementById("cancel-delete").addEventListener("click", handlers.cancelDelete);
   deleteModal.addEventListener("click", handlers.deleteModalClick);
   document.getElementById("confirm-delete").addEventListener("click", handlers.confirmDelete);
-  
-  cropArea.addEventListener("mousedown", handlers.cropStart);
-  cropArea.addEventListener("touchstart", handlers.cropStart, { passive: false });
-  document.addEventListener("mousemove", handlers.cropMove);
-  document.addEventListener("touchmove", handlers.cropMove, { passive: false });
-  document.addEventListener("mouseup", handlers.cropEnd);
-  document.addEventListener("touchend", handlers.cropEnd);
+
   document.getElementById("cancel-crop").addEventListener("click", handlers.cancelCrop);
   document.getElementById("confirm-crop").addEventListener("click", handlers.confirmCrop);
-  
+
   document.addEventListener("keydown", handlers.keydown);
   document.addEventListener("paste", handlers.paste);
 }
 
 function cleanupEventListeners() {
+  closeCropper();
   const editModal = document.getElementById("edit-modal");
   const editAssetData = document.getElementById("edit-asset-data");
   const editImageDropzone = document.getElementById("edit-image-dropzone");
@@ -334,8 +302,7 @@ function cleanupEventListeners() {
   const editRemoveImage = document.getElementById("edit-remove-image");
   const removeCurrentImageBtn = document.getElementById("remove-current-image");
   const deleteModal = document.getElementById("delete-modal");
-  const cropArea = document.getElementById("crop-area");
-  
+
   document.getElementById("modal-close")?.removeEventListener("click", handlers.modalClose);
   document.getElementById("cancel-edit")?.removeEventListener("click", handlers.cancelEdit);
   editModal?.removeEventListener("click", handlers.modalOverlayClick);
@@ -353,16 +320,10 @@ function cleanupEventListeners() {
   document.getElementById("cancel-delete")?.removeEventListener("click", handlers.cancelDelete);
   deleteModal?.removeEventListener("click", handlers.deleteModalClick);
   document.getElementById("confirm-delete")?.removeEventListener("click", handlers.confirmDelete);
-  
-  cropArea?.removeEventListener("mousedown", handlers.cropStart);
-  cropArea?.removeEventListener("touchstart", handlers.cropStart);
-  document.removeEventListener("mousemove", handlers.cropMove);
-  document.removeEventListener("touchmove", handlers.cropMove);
-  document.removeEventListener("mouseup", handlers.cropEnd);
-  document.removeEventListener("touchend", handlers.cropEnd);
+
   document.getElementById("cancel-crop")?.removeEventListener("click", handlers.cancelCrop);
   document.getElementById("confirm-crop")?.removeEventListener("click", handlers.confirmCrop);
-  
+
   document.removeEventListener("keydown", handlers.keydown);
   document.removeEventListener("paste", handlers.paste);
 }
@@ -646,172 +607,70 @@ async function handleConfirmDelete() {
   }
 }
 
-// Cropper functions
+// Cropper.js
 function openCropper(file) {
   pendingImageFile = file;
   const cropperImage = document.getElementById("cropper-image");
   const cropperModal = document.getElementById("cropper-modal");
   const url = URL.createObjectURL(file);
   cropperImage.onload = () => {
-    initCropArea();
-    URL.revokeObjectURL(url);
+    if (cropperInstance) cropperInstance.destroy();
+    requestAnimationFrame(() => {
+      cropperInstance = new Cropper(cropperImage, {
+        aspectRatio: 1,
+        viewMode: 1,
+        dragMode: "move",
+        autoCrop: true,
+        autoCropArea: 1,
+        restore: false,
+        ready() {
+          const imageData = this.cropper.getImageData();
+          if (imageData.naturalWidth === imageData.naturalHeight) {
+            const canvasData = this.cropper.getCanvasData();
+            this.cropper.setCropBoxData({
+              left: canvasData.left,
+              top: canvasData.top,
+              width: canvasData.width,
+              height: canvasData.height
+            });
+          }
+        }
+      });
+    });
   };
   cropperImage.src = url;
   cropperModal.style.display = "flex";
 }
 
 function closeCropper() {
+  if (cropperInstance) {
+    cropperInstance.destroy();
+    cropperInstance = null;
+  }
+  const cropperImage = document.getElementById("cropper-image");
+  if (cropperImage?.src?.startsWith("blob:")) URL.revokeObjectURL(cropperImage.src);
   document.getElementById("cropper-modal").style.display = "none";
   pendingImageFile = null;
 }
 
-function initCropArea() {
-  const cropperImage = document.getElementById("cropper-image");
-  const cropperContainer = document.getElementById("cropper-container");
-  const rect = cropperImage.getBoundingClientRect();
-  const containerRect = cropperContainer.getBoundingClientRect();
-  
-  cropState.imageWidth = rect.width;
-  cropState.imageHeight = rect.height;
-  cropState.containerWidth = containerRect.width;
-  cropState.containerHeight = containerRect.height;
-  cropState.offsetX = rect.left - containerRect.left;
-  cropState.offsetY = rect.top - containerRect.top;
-  
-  const minDim = Math.min(rect.width, rect.height);
-  cropState.cropSize = Math.min(minDim * 0.8, 300);
-  cropState.cropX = cropState.offsetX + (rect.width - cropState.cropSize) / 2;
-  cropState.cropY = cropState.offsetY + (rect.height - cropState.cropSize) / 2;
-  
-  updateCropAreaDisplay();
-}
-
-function updateCropAreaDisplay() {
-  const cropArea = document.getElementById("crop-area");
-  const cropperImage = document.getElementById("cropper-image");
-  const cropSizeIndicator = document.getElementById("crop-size-indicator");
-  
-  cropArea.style.left = cropState.cropX + "px";
-  cropArea.style.top = cropState.cropY + "px";
-  cropArea.style.width = cropState.cropSize + "px";
-  cropArea.style.height = cropState.cropSize + "px";
-  
-  const scaleX = cropperImage.naturalWidth / cropState.imageWidth;
-  const actualSize = Math.round(cropState.cropSize * scaleX);
-  cropSizeIndicator.textContent = `${actualSize} × ${actualSize}px`;
-}
-
-function constrainCrop() {
-  const minSize = 50;
-  const maxSize = Math.min(cropState.imageWidth, cropState.imageHeight);
-  
-  cropState.cropSize = Math.max(minSize, Math.min(cropState.cropSize, maxSize));
-  cropState.cropX = Math.max(cropState.offsetX, Math.min(cropState.cropX, cropState.offsetX + cropState.imageWidth - cropState.cropSize));
-  cropState.cropY = Math.max(cropState.offsetY, Math.min(cropState.cropY, cropState.offsetY + cropState.imageHeight - cropState.cropSize));
-}
-
-function getEventPos(e) {
-  if (e.touches && e.touches.length > 0) {
-    return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-  }
-  return { x: e.clientX, y: e.clientY };
-}
-
-function handleCropStart(e) {
-  e.preventDefault();
-  const pos = getEventPos(e);
-  const handle = e.target.dataset?.handle;
-  const cropArea = document.getElementById("crop-area");
-  
-  cropState.startX = pos.x;
-  cropState.startY = pos.y;
-  cropState.startCropX = cropState.cropX;
-  cropState.startCropY = cropState.cropY;
-  cropState.startCropSize = cropState.cropSize;
-  
-  if (handle) {
-    cropState.resizing = true;
-    cropState.resizeHandle = handle;
-  } else if (e.target === cropArea || e.target.closest("#crop-area")) {
-    cropState.dragging = true;
-  }
-}
-
-function handleCropMove(e) {
-  if (!cropState.dragging && !cropState.resizing) return;
-  e.preventDefault();
-  
-  const pos = getEventPos(e);
-  const dx = pos.x - cropState.startX;
-  const dy = pos.y - cropState.startY;
-  
-  if (cropState.dragging) {
-    cropState.cropX = cropState.startCropX + dx;
-    cropState.cropY = cropState.startCropY + dy;
-  } else if (cropState.resizing) {
-    const handle = cropState.resizeHandle;
-    let sizeDelta = 0;
-    
-    if (handle === "se") {
-      sizeDelta = Math.max(dx, dy);
-    } else if (handle === "sw") {
-      sizeDelta = Math.max(-dx, dy);
-      cropState.cropX = cropState.startCropX - (cropState.startCropSize + sizeDelta - cropState.startCropSize);
-    } else if (handle === "ne") {
-      sizeDelta = Math.max(dx, -dy);
-      cropState.cropY = cropState.startCropY - (cropState.startCropSize + sizeDelta - cropState.startCropSize);
-    } else if (handle === "nw") {
-      sizeDelta = Math.max(-dx, -dy);
-      cropState.cropX = cropState.startCropX - sizeDelta;
-      cropState.cropY = cropState.startCropY - sizeDelta;
-    }
-    
-    cropState.cropSize = cropState.startCropSize + sizeDelta;
-  }
-  
-  constrainCrop();
-  updateCropAreaDisplay();
-}
-
-function handleCropEnd() {
-  cropState.dragging = false;
-  cropState.resizing = false;
-  cropState.resizeHandle = null;
-}
-
 async function handleConfirmCrop() {
-  if (!pendingImageFile) return;
-  
-  const cropperImage = document.getElementById("cropper-image");
+  if (!cropperInstance || !pendingImageFile) return;
   const editImagePreview = document.getElementById("edit-image-preview");
   const editImageDropzone = document.getElementById("edit-image-dropzone");
   const currentImageContainer = document.getElementById("current-image-container");
-  
-  const scaleX = cropperImage.naturalWidth / cropState.imageWidth;
-  
-  const sourceX = (cropState.cropX - cropState.offsetX) * scaleX;
-  const sourceY = (cropState.cropY - cropState.offsetY) * scaleX;
-  const sourceSize = cropState.cropSize * scaleX;
-  
-  const canvas = document.createElement("canvas");
-  const outputSize = Math.min(512, Math.round(sourceSize));
-  canvas.width = outputSize;
-  canvas.height = outputSize;
-  
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(
-    cropperImage,
-    sourceX, sourceY, sourceSize, sourceSize,
-    0, 0, outputSize, outputSize
-  );
-  
-  const croppedBlob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.92));
-  
+  const canvas = cropperInstance.getCroppedCanvas({
+    maxWidth: 512,
+    maxHeight: 512,
+    fillColor: "#fff",
+    imageSmoothingQuality: "high"
+  });
+  const croppedBlob = await new Promise(resolve => {
+    canvas.toBlob(resolve, "image/jpeg", 0.92);
+  });
   selectedNewImage = croppedBlob;
   editImagePreview.src = URL.createObjectURL(croppedBlob);
   editImageDropzone.classList.add("has-image");
   currentImageContainer.style.display = "none";
-  
   closeCropper();
 }
 
