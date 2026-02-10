@@ -1590,26 +1590,25 @@ pre::-webkit-scrollbar {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.85);
+    background: none;
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 2000;
     padding: 1em;
-    backdrop-filter: blur(4px);
 }
 
-.cropper-modal {
+.crop-dialog {
     background: white;
-    border-radius: 16px;
+    border-radius: 0;
     padding: 1.5em;
     width: 100%;
-    max-width: 600px;
+    max-width: 480px;
     max-height: 90vh;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 12px #0001;
     animation: modalSlideIn 0.25s ease-out;
 }
 
@@ -1632,13 +1631,13 @@ pre::-webkit-scrollbar {
     color: #6b7280;
 }
 
-/* Cropper.js container - library injects its own crop UI */
+/* Cropper.js container - library injects its own crop UI, square aspect */
 .cropper-wrap {
     position: relative;
     width: 100%;
-    height: 400px;
-    background: #1a1a1a;
-    border-radius: 8px;
+    aspect-ratio: 1 / 1;
+    background: #f3f4f6;
+    border-radius: 0;
     overflow: hidden;
 }
 
@@ -1652,41 +1651,6 @@ pre::-webkit-scrollbar {
     gap: 0.8em;
     margin-top: 1.2em;
     justify-content: flex-end;
-}
-
-.cropper-actions .btn-crop {
-    padding: 0.7em 1.6em;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.95em;
-    font-weight: 600;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
-}
-
-.cropper-actions .btn-crop:hover {
-    background: linear-gradient(135deg, #059669 0%, #047857 100%);
-    transform: translateY(-1px);
-}
-
-.cropper-actions .btn-cancel-crop {
-    padding: 0.7em 1.4em;
-    background: #f3f4f6;
-    color: #374151;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.95em;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.cropper-actions .btn-cancel-crop:hover {
-    background: #e5e7eb;
-    border-color: #d1d5db;
 }
 
 /* ============================================

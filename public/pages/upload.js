@@ -78,7 +78,7 @@ export function template() {
 
     <!-- Image Cropper Modal (Cropper.js) -->
     <div id="cropper-modal" class="cropper-overlay" style="display: none;">
-      <div class="cropper-modal">
+      <div class="crop-dialog">
         <div class="cropper-header">
           <div>
             <h3>Crop Thumbnail</h3>
@@ -89,8 +89,8 @@ export function template() {
           <img id="cropper-image" alt="Crop preview" />
         </div>
         <div class="cropper-actions">
-          <button type="button" class="btn-cancel-crop" id="cancel-crop">Cancel</button>
-          <button type="button" class="btn-crop" id="confirm-crop">Crop & Use</button>
+          <button type="button" class="btn-secondary" id="cancel-crop">Cancel</button>
+          <button type="button" class="btn-primary" id="confirm-crop">Crop & Use</button>
         </div>
       </div>
     </div>
