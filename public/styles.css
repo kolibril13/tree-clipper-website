@@ -1712,9 +1712,11 @@ pre::-webkit-scrollbar {
 }
 
 .extension-hint a {
-    color: #6b7280;
+    color: #2072cc;
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }
 
 .extension-hint a:hover {
-    color: #2072cc;
+    color: #185ba0;
 }
