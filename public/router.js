@@ -19,6 +19,8 @@ const routes = [
   { path: '/terms.html', page: 'terms' },
   { path: '/imprint', page: 'imprint' },
   { path: '/imprint.html', page: 'imprint' },
+  { path: '/getting-started', page: 'getting-started' },
+  { path: '/getting-started.html', page: 'getting-started' },
   // Dynamic routes handled by pattern matching
 ];
 

@@ -85,7 +85,7 @@ function renderLoginCorner(user, profile) {
     corner.innerHTML = '';
     corner.insertAdjacentHTML(
       "afterbegin",
-      `<a href="/upload-asset" class="upload-link">+ Upload</a><a href="/my-assets" class="login-status"></a><button class="logout-btn">Logout</button>`
+      `<a href="/getting-started" class="nav-link">Getting Started</a><a href="/upload-asset" class="upload-link">+ Upload</a><a href="/my-assets" class="login-status"></a><button class="logout-btn">Logout</button>`
     );
     corner.querySelector(".login-status").textContent = displayName;
 
@@ -96,6 +96,7 @@ function renderLoginCorner(user, profile) {
     });
   } else {
     corner.innerHTML = `
+      <a href="/getting-started" class="nav-link">Getting Started</a>
       <a href="/upload-asset" class="upload-link">+ Upload</a>
       <button class="login-link">Login</button>
     `;

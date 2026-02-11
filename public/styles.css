@@ -286,6 +286,22 @@ body {
     border-color: #ccc;
 }
 
+.login-corner .nav-link {
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 0.9em;
+    font-weight: 500;
+    padding: 0.3em 0.6em;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+}
+
+.login-corner .nav-link:hover {
+    color: #374151;
+    background: #f3f4f6;
+    text-decoration: none;
+}
+
 .login-corner .upload-link {
     color: #6b7280;
     text-decoration: none;
@@ -1235,6 +1251,143 @@ pre::-webkit-scrollbar {
 
 .legal-content li {
     margin-bottom: 0.3em;
+}
+
+/* ============================================
+   GETTING STARTED GUIDE
+   ============================================ */
+
+.guide-content {
+    line-height: 1.7;
+    max-width: 680px;
+}
+
+.guide-section {
+    margin-bottom: 2.5em;
+}
+
+.guide-section h2 {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #232323;
+    margin-top: 0;
+    margin-bottom: 0.6em;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.guide-step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6em;
+    height: 1.6em;
+    border-radius: 50%;
+    background: #2072cc;
+    color: white;
+    font-size: 0.85em;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.guide-section > p {
+    color: #4b5563;
+    margin-top: 0;
+    margin-bottom: 1em;
+}
+
+.guide-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    margin-top: 0.5em;
+}
+
+.guide-step {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1em 1.2em;
+}
+
+.guide-step h3 {
+    font-size: 1em;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 0.3em 0;
+}
+
+.guide-step p {
+    margin: 0;
+    color: #4b5563;
+    font-size: 0.95em;
+}
+
+.guide-step a {
+    color: #2072cc;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.guide-step a:hover {
+    color: #185ba0;
+}
+
+.guide-step code {
+    background: #e5e7eb;
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+.guide-step kbd {
+    display: inline-block;
+    padding: 0.15em 0.45em;
+    font-size: 0.85em;
+    font-family: inherit;
+    color: #374151;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    box-shadow: 0 1px 0 #d1d5db;
+}
+
+.guide-intro {
+    font-size: 1.05em;
+    color: #4b5563;
+    margin-bottom: 1.5em;
+}
+
+.guide-screenshot {
+    display: block;
+    max-width: 100%;
+    width: 420px;
+    margin-top: 0.8em;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.guide-section--cta {
+    background: #f0f9ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    padding: 1.2em 1.5em;
+}
+
+.guide-section--cta p {
+    margin: 0;
+    color: #1e40af;
+}
+
+.guide-section--cta a {
+    color: #2072cc;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.guide-section--cta a:hover {
+    color: #185ba0;
 }
 
 /* ============================================
