@@ -4,6 +4,9 @@ import { resolve } from 'path';
 export default defineConfig({
   // Source files are in /public, output goes to /dist
   root: 'public',
+  
+  // Static assets (images, etc.) that should be copied as-is to dist
+  publicDir: '../static',
 
   plugins: [
     {
