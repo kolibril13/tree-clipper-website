@@ -113,6 +113,11 @@ export default {
       const callbackHtml = new URL("/auth/callback/index.html", url.origin);
       return env.ASSETS.fetch(new Request(callbackHtml));
     }
+    // Auth confirm page - handles email token verification client-side
+    else if (url.pathname === "/auth/confirm" || url.pathname === "/auth/confirm/") {
+      const confirmHtml = new URL("/auth/confirm/index.html", url.origin);
+      return env.ASSETS.fetch(new Request(confirmHtml));
+    }
     // Static assets (files with extensions) - serve directly
     else if (pathParts.length > 0 && pathParts[pathParts.length - 1].includes(".")) {
       return env.ASSETS.fetch(request);

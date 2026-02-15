@@ -17,6 +17,8 @@ export default defineConfig({
           const [path, query] = req.url.split('?');
           if (path === '/auth/callback' || path === '/auth/callback/') {
             req.url = `/auth/callback/index.html${query ? `?${query}` : ''}`;
+          } else if (path === '/auth/confirm' || path === '/auth/confirm/') {
+            req.url = `/auth/confirm/index.html${query ? `?${query}` : ''}`;
           }
           next();
         });
@@ -27,6 +29,8 @@ export default defineConfig({
           const [path, query] = req.url.split('?');
           if (path === '/auth/callback' || path === '/auth/callback/') {
             req.url = `/auth/callback/index.html${query ? `?${query}` : ''}`;
+          } else if (path === '/auth/confirm' || path === '/auth/confirm/') {
+            req.url = `/auth/confirm/index.html${query ? `?${query}` : ''}`;
           }
           next();
         });
@@ -50,6 +54,8 @@ export default defineConfig({
         main: resolve(__dirname, 'public/index.html'),
         // Auth callback needs its own entry point
         'auth-callback': resolve(__dirname, 'public/auth/callback/index.html'),
+        // Auth confirm page - handles email token verification client-side
+        'auth-confirm': resolve(__dirname, 'public/auth/confirm/index.html'),
       },
     },
   },
