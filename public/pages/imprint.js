@@ -27,6 +27,15 @@ export function template() {
         <strong>Jan-Hendrik</strong> (website &amp; database):<br>
         <a href="https://github.com/kolibril13/tree-clipper-website/" target="_blank" rel="noopener">https://github.com/kolibril13/tree-clipper-website/</a>
       </p>
+
+      <h2>Logo Design</h2>
+      <div class="logo-credit">
+        <img src="/icon.svg" alt="Tree Clipper Logo" class="imprint-logo" width="80" height="auto">
+        <p class="logo-credit-by">
+          <strong>Anita Klaiber</strong>
+          <a href="https://www.linkedin.com/in/anita-klaiber-0100ba117/" target="_blank" rel="noopener">LinkedIn</a>
+        </p>
+      </div>
     </div>
 
     <p style="margin-top: 2em;">

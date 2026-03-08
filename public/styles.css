@@ -1237,6 +1237,42 @@ pre::-webkit-scrollbar {
     line-height: 1.7;
 }
 
+.logo-credit {
+    display: flex;
+    align-items: center;
+    gap: 1.25em;
+    margin: 0.5em 0 1em;
+}
+
+.logo-credit .imprint-logo {
+    height: 72px;
+    width: auto;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.logo-credit-by {
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+    flex-wrap: wrap;
+}
+
+.logo-credit-by strong {
+    font-weight: 600;
+}
+
+.logo-credit-by a {
+    color: #000099;
+    text-decoration: none;
+    font-size: 0.95em;
+}
+
+.logo-credit-by a:hover {
+    text-decoration: underline;
+}
+
 .legal-content h2 {
     font-size: 1.1em;
     margin-top: 1.5em;
