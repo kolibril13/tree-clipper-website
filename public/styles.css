@@ -35,7 +35,7 @@ body {
 .site-logo .logo-text {
     font-size: 1.1em;
     font-weight: 600;
-    color: #000099;
+    color: #2d3055;
     letter-spacing: -0.5px;
 }
 
@@ -350,6 +350,7 @@ h1 {
     margin-bottom: 0.7em;
     padding-top: 0.5em;
     letter-spacing: -1px;
+    color: #493e33;
 }
 
 ul {
@@ -1264,7 +1265,7 @@ pre::-webkit-scrollbar {
 }
 
 .logo-credit-by a {
-    color: #000099;
+    color: #2d3055;
     text-decoration: none;
     font-size: 0.95em;
 }
