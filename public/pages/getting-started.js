@@ -104,6 +104,13 @@ export function template() {
           Happy node sharing!
         </p>
       </section>
+
+      <section class="guide-section">
+        <p>
+          Learn more about Tree Clipper in detail
+          <a href="https://algebraic.games/blog/tree_clipper/" target="_blank" rel="noopener">in this blog post</a>.
+        </p>
+      </section>
     </div>
   `;
 }
