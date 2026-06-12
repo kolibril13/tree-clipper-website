@@ -96,6 +96,51 @@ function generateSlug(title) {
     .slice(0, 50);                 // Limit length
 }
 
+// Asset data is stored base64-encoded. Accepted inputs:
+// - "TreeClipper::<base64>" (native format, payload must be valid base64)
+// - a plain base64 string
+// - a JSON object/array, which is base64-encoded before storage
+const BASE64_REGEX = /^[A-Za-z0-9+/]+={0,2}$/;
+
+function isBase64(str) {
+  // Tolerate line wrapping, but not other whitespace (rejects plain prose)
+  const s = str.replace(/[\r\n]/g, "");
+  return s.length > 0 && s.length % 4 === 0 && BASE64_REGEX.test(s);
+}
+
+function utf8ToBase64(str) {
+  const bytes = new TextEncoder().encode(str);
+  let binary = "";
+  // Chunked to avoid call-stack limits on large payloads
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
+}
+
+// Returns the value to store, or null if the input is not allowed.
+function normalizeAssetData(raw) {
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  if (trimmed.startsWith("TreeClipper::")) {
+    return isBase64(trimmed.slice("TreeClipper::".length)) ? trimmed : null;
+  }
+
+  if (isBase64(trimmed)) return trimmed;
+
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (parsed !== null && typeof parsed === "object") {
+      return utf8ToBase64(trimmed);
+    }
+  } catch {
+    // Not JSON either
+  }
+  return null;
+}
+
 export default {
   async fetch(request, env, ctx) {
     return withSecurityHeaders(
@@ -584,7 +629,15 @@ export default {
       if (!body?.assetData) {
         return new Response("Missing assetData", { status: 400 });
       }
-      
+
+      const assetData = normalizeAssetData(body.assetData);
+      if (!assetData) {
+        return new Response(
+          "Asset data must be base64 (optionally TreeClipper::-prefixed) or valid JSON",
+          { status: 400 }
+        );
+      }
+
       if (!body?.title?.trim()) {
         return new Response("Title is required", { status: 400 });
       }
@@ -635,7 +688,7 @@ export default {
           user_id: userData.user.id,
           slug,
           author,
-          asset_data: body.assetData,
+          asset_data: assetData,
           title: body.title.trim(),
           description: body.description,
           image_data: body.imageData,
@@ -693,7 +746,16 @@ export default {
       // Title cannot be changed (it determines the URL slug)
       // if (body.title !== undefined) - NOT ALLOWED
       if (body.description !== undefined) updates.description = body.description;
-      if (body.assetData !== undefined) updates.asset_data = body.assetData;
+      if (body.assetData !== undefined) {
+        const assetData = normalizeAssetData(body.assetData);
+        if (!assetData) {
+          return new Response(
+            "Asset data must be base64 (optionally TreeClipper::-prefixed) or valid JSON",
+            { status: 400 }
+          );
+        }
+        updates.asset_data = assetData;
+      }
       if (body.imageData !== undefined) updates.image_data = body.imageData;
       if (body.nodeType !== undefined) {
         const normalizedNodeType = normalizeNodeType(body.nodeType);
