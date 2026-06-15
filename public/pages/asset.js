@@ -26,23 +26,8 @@ export function template(params) {
       <div id="asset-meta" class="asset-meta"></div>
     </div>
 
-    <!-- Raw payload (collapsible) -->
-    <details class="asset-raw">
-      <summary>Asset data</summary>
-      <div class="copy-asset">
-        <pre id="asset-data">Loading...</pre>
-        <button id="copy-button" class="copy-button">Copy</button>
-      </div>
-    </details>
-
-    <!-- Blender extension reference -->
-    <div class="extension-hint">
-      Import this asset in Blender using the <a href="https://extensions.blender.org/add-ons/tree-clipper/" target="_blank" rel="noopener">Tree Clipper extension</a>
-    </div>
-
     <!-- Node tree viewer comes last; breaks out wider than the page column on desktop -->
     <section id="node-tree-section" class="node-tree-section" hidden>
-      <span class="node-tree-section__eyebrow">Node Tree</span>
       <div class="node-tree-panel">
         <div class="node-tree-panel__header">
           <span class="node-tree-panel__title">
@@ -68,12 +53,10 @@ function getElements() {
   if (!elements) {
     elements = {
       title: document.getElementById("asset-title"),
-      data: document.getElementById("asset-data"),
       meta: document.getElementById("asset-meta"),
       compat: document.getElementById("compat-info"),
       img: document.getElementById("asset-img"),
       imgContainer: document.getElementById("asset-img-container"),
-      copyBtn: document.getElementById("copy-button"),
       treeSection: document.getElementById("node-tree-section"),
       treeCanvas: document.getElementById("node-tree-canvas"),
       fullscreenBtn: document.getElementById("node-tree-fullscreen")
@@ -123,11 +106,6 @@ export function init(params) {
   const els = getElements();
   mountedPayload = null;
 
-  // Set up copy button
-  if (els.copyBtn) {
-    els.copyBtn.addEventListener('click', copyAssetData);
-  }
-
   // Set up node-tree fullscreen toggle
   if (els.fullscreenBtn) {
     els.fullscreenBtn.addEventListener('click', toggleFullscreen);
@@ -139,9 +117,6 @@ export function init(params) {
 
   // Return cleanup function
   return () => {
-    if (els.copyBtn) {
-      els.copyBtn.removeEventListener('click', copyAssetData);
-    }
     if (els.fullscreenBtn) {
       els.fullscreenBtn.removeEventListener('click', toggleFullscreen);
     }
@@ -170,31 +145,11 @@ export function prefetch(username, slug) {
   assetCache.set(cacheKey, fetchPromise);
 }
 
-function copyAssetData() {
-  const assetData = document.getElementById('asset-data');
-  const text = assetData.textContent;
-  
-  navigator.clipboard.writeText(text).then(() => {
-    const button = document.getElementById('copy-button');
-    const originalText = button.textContent;
-    button.textContent = 'Copied!';
-    button.classList.add('copied');
-    
-    setTimeout(() => {
-      button.textContent = originalText;
-      button.classList.remove('copied');
-    }, 2000);
-  }).catch(err => {
-    console.error('Failed to copy:', err);
-  });
-}
-
 async function loadAsset(username, slug) {
   const els = getElements();
-  
+
   if (!username || !slug) {
     els.title.textContent = "No Asset";
-    els.data.textContent = "Please provide an asset in the URL";
     return;
   }
   
@@ -214,7 +169,6 @@ async function loadAsset(username, slug) {
       if (!res.ok) {
         if (res.status === 404) {
           els.title.textContent = "Asset Not Found";
-          els.data.textContent = "The requested asset does not exist";
           return;
         }
         throw new Error(`HTTP ${res.status}`);
@@ -229,9 +183,6 @@ async function loadAsset(username, slug) {
     
     // Update title
     els.title.textContent = asset.title || "Untitled Asset";
-    
-    // Update asset data immediately (most important for user)
-    els.data.textContent = asset.asset_data || "No data available";
 
     // Render the interactive node tree from the payload. The component handles
     // both "TreeClipper::" payloads and raw JSON, and shows its own decode
@@ -301,7 +252,6 @@ async function loadAsset(username, slug) {
   } catch (err) {
     console.error("Failed to load asset:", err);
     els.title.textContent = "Error";
-    els.data.textContent = "Failed to load: " + err.message;
   }
 }
 
