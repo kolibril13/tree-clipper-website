@@ -13,26 +13,8 @@ export function template(params) {
   return `
     <a href="/" class="back-button">←</a>
     <h1>
-      <span id="asset-title" style="color: #232323;">&nbsp;</span>
+      <span id="asset-title">&nbsp;</span>
     </h1>
-
-    <!-- Node tree viewer (breaks out wider than the page column on desktop) -->
-    <section id="node-tree-section" class="node-tree-section" hidden>
-      <div class="node-tree-panel">
-        <div class="node-tree-panel__header">
-          <span class="node-tree-panel__title">
-            <span class="node-tree-panel__icon">◇</span> Node Tree
-          </span>
-          <button id="node-tree-fullscreen" class="node-tree-fullscreen" type="button" title="Toggle fullscreen">
-            <span class="node-tree-fullscreen__icon">⤢</span>
-            <span class="node-tree-fullscreen__label">Fullscreen</span>
-          </button>
-        </div>
-        <div id="node-tree-canvas" class="node-tree-canvas">
-          <div class="node-tree-canvas__loading">Loading node tree…</div>
-        </div>
-      </div>
-    </section>
 
     <!-- Compatibility info section -->
     <div id="compat-info" class="asset-tags-detail" style="display: none;"></div>
@@ -57,6 +39,25 @@ export function template(params) {
     <div class="extension-hint">
       Import this asset in Blender using the <a href="https://extensions.blender.org/add-ons/tree-clipper/" target="_blank" rel="noopener">Tree Clipper extension</a>
     </div>
+
+    <!-- Node tree viewer comes last; breaks out wider than the page column on desktop -->
+    <section id="node-tree-section" class="node-tree-section" hidden>
+      <span class="node-tree-section__eyebrow">Node Tree</span>
+      <div class="node-tree-panel">
+        <div class="node-tree-panel__header">
+          <span class="node-tree-panel__title">
+            <span class="node-tree-panel__icon">◇</span> Node Tree
+          </span>
+          <button id="node-tree-fullscreen" class="node-tree-fullscreen" type="button" title="Toggle fullscreen">
+            <span class="node-tree-fullscreen__icon">⤢</span>
+            <span class="node-tree-fullscreen__label">Fullscreen</span>
+          </button>
+        </div>
+        <div id="node-tree-canvas" class="node-tree-canvas">
+          <div class="node-tree-canvas__loading">Loading node tree…</div>
+        </div>
+      </div>
+    </section>
   `;
 }
 

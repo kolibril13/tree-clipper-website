@@ -6,8 +6,8 @@ export const title = 'Settings – Tree Clipper';
 // Page-specific styles
 const pageStyles = `
   .settings-section {
-    background: #fff;
-    border: 1px solid #e5e7eb;
+    background: #20232b;
+    border: 1px solid #2e323c;
     border-radius: 10px;
     padding: 1.5em;
     margin-bottom: 1.5em;
@@ -16,7 +16,7 @@ const pageStyles = `
   .settings-section h2 {
     font-size: 1.1em;
     margin: 0 0 1em 0;
-    color: #374151;
+    color: #cbd0d8;
     display: flex;
     align-items: center;
     gap: 0.5em;
@@ -40,26 +40,26 @@ const pageStyles = `
   .profile-field label {
     font-size: 0.85em;
     font-weight: 500;
-    color: #6b7280;
+    color: #a3a9b4;
   }
 
   .profile-field .value {
     font-size: 1em;
-    color: #232323;
+    color: #e6e7ea;
     padding: 0.6em 0.8em;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
+    background: #20232b;
+    border: 1px solid #2e323c;
     border-radius: 6px;
   }
 
   .profile-field .value.username {
     font-weight: 600;
-    color: #2072cc;
+    color: #4a93e8;
   }
 
   .profile-field .hint {
     font-size: 0.8em;
-    color: #9ca3af;
+    color: #767d89;
     margin-top: 0.2em;
   }
 
@@ -68,8 +68,8 @@ const pageStyles = `
     align-items: center;
     gap: 0.8em;
     padding: 0.6em 0.8em;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
+    background: #20232b;
+    border: 1px solid #2e323c;
     border-radius: 6px;
   }
 
@@ -101,12 +101,12 @@ const pageStyles = `
 
   .discord-name {
     font-weight: 600;
-    color: #232323;
+    color: #e6e7ea;
   }
 
   .discord-id {
     font-size: 0.8em;
-    color: #9ca3af;
+    color: #767d89;
   }
 
   .account-dates {
@@ -123,25 +123,25 @@ const pageStyles = `
 
   .account-dates .date-label {
     font-size: 0.8em;
-    color: #9ca3af;
+    color: #767d89;
   }
 
   .account-dates .date-value {
     font-size: 0.95em;
-    color: #374151;
+    color: #cbd0d8;
   }
 
   .danger-zone {
-    border-color: #fecaca;
-    background: #fef2f2;
+    border-color: #5b2a2a;
+    background: #241616;
   }
 
   .danger-zone h2 {
-    color: #991b1b;
+    color: #f6a3a3;
   }
 
   .danger-zone p {
-    color: #7f1d1d;
+    color: #f6a3a3;
     font-size: 0.9em;
     margin: 0 0 1em 0;
   }
@@ -164,23 +164,23 @@ const pageStyles = `
   }
 
   .settings-delete-modal .modal-content {
-    border: 2px solid #fecaca;
+    border: 2px solid #5b2a2a;
   }
 
   .settings-delete-modal h2 {
-    color: #991b1b;
+    color: #f6a3a3;
     margin: 0 0 1em 0;
     font-size: 1.3em;
   }
 
   .settings-delete-modal p {
-    color: #374151;
+    color: #cbd0d8;
     margin: 0 0 0.8em 0;
     font-size: 0.95em;
   }
 
   .settings-delete-modal ul {
-    color: #7f1d1d;
+    color: #f6a3a3;
     margin: 0 0 1em 0;
     padding-left: 1.5em;
     font-size: 0.9em;

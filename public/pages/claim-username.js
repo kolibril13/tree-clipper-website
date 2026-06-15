@@ -65,12 +65,12 @@ const pageStyles = `
   .username-intro {
     text-align: center;
     margin-bottom: 2em;
-    color: #64748b;
+    color: #a3a9b4;
     line-height: 1.6;
   }
   
   .username-intro strong {
-    color: #374151;
+    color: #cbd0d8;
   }
   
   .username-input-wrapper {
@@ -82,7 +82,7 @@ const pageStyles = `
     left: 0.9em;
     top: 50%;
     transform: translateY(-50%);
-    color: #94a3b8;
+    color: #767d89;
     font-size: 0.95em;
     pointer-events: none;
   }
@@ -93,7 +93,7 @@ const pageStyles = `
   
   .username-hint {
     font-size: 0.85em;
-    color: #6b7280;
+    color: #a3a9b4;
     margin-top: 0.5em;
   }
   
@@ -106,7 +106,7 @@ const pageStyles = `
     min-height: 1.4em;
   }
   
-  .username-status.checking { color: #6b7280; }
+  .username-status.checking { color: #a3a9b4; }
   .username-status.available { color: #059669; }
   .username-status.taken { color: #dc2626; }
   .username-status.invalid { color: #d97706; }

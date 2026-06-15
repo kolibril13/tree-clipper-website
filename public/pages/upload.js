@@ -45,7 +45,7 @@ export function template() {
         <div class="form-group">
           <label for="title">Title *</label>
           <input type="text" id="title" placeholder="Ring Arrangement" required />
-          <small id="slug-status" style="font-size: 0.85em; color: #6b7280;">Cannot be changed later (used in URL)</small>
+          <small id="slug-status" style="font-size: 0.85em; color: #a3a9b4;">Cannot be changed later (used in URL)</small>
         </div>
 
         <div class="form-group">
