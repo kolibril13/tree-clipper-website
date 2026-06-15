@@ -652,6 +652,26 @@ export default {
         return new Response("Invalid node type", { status: 400 });
       }
 
+      // Idempotency guard: a double-submit or client retry can POST the same
+      // payload twice in quick succession. If an identical entry was just
+      // created, return it instead of inserting a duplicate.
+      const dedupeWindowStart = new Date(Date.now() - 60_000).toISOString();
+      const { data: recentEntries } = await supabase
+        .from("entries")
+        .select("slug, author, title, asset_data")
+        .eq("user_id", userData.user.id)
+        .gte("creation_date", dedupeWindowStart);
+
+      const duplicate = recentEntries?.find(
+        (entry) => entry.title === body.title.trim() && entry.asset_data === assetData
+      );
+      if (duplicate) {
+        return Response.json(
+          { slug: duplicate.slug, author: duplicate.author },
+          { status: 201 }
+        );
+      }
+
       const now = new Date().toISOString();
       const author = userProfile.username;
       

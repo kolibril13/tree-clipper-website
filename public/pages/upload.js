@@ -100,6 +100,7 @@ export function template() {
 let statusTimeout;
 let slugCheckTimeout;
 let hasAssetDataBeenTouched = false;
+let isSubmitting = false;
 let selectedImageFile = null;
 let parsedAssetMeta = null;
 let pendingImageFile = null;
@@ -129,6 +130,7 @@ export async function init() {
   
   // Reset state
   hasAssetDataBeenTouched = false;
+  isSubmitting = false;
   selectedImageFile = null;
   parsedAssetMeta = null;
   
@@ -487,11 +489,35 @@ async function handleConfirmCrop() {
 
 async function handleFormSubmit(e) {
   e.preventDefault();
-  
+
   const moreFields = document.getElementById("more-fields");
-  const titleInput = document.getElementById("title");
-  
   if (moreFields.style.display === "none") return;
+
+  // Guard against double-clicks / repeated Enter while the upload is in flight
+  if (isSubmitting) return;
+  isSubmitting = true;
+
+  const submitBtn = document.querySelector("#asset-form button[type='submit']");
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Uploading…";
+
+  let redirecting = false;
+  try {
+    redirecting = await submitAsset();
+  } catch (err) {
+    showStatus("error", "Upload failed: " + (err?.message || err));
+  } finally {
+    if (!redirecting) {
+      isSubmitting = false;
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit Asset";
+    }
+  }
+}
+
+// Returns true if the upload succeeded and a redirect is pending.
+async function submitAsset() {
+  const titleInput = document.getElementById("title");
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
@@ -568,13 +594,15 @@ async function handleFormSubmit(e) {
   if (res.ok) {
     const result = await res.json();
     showStatus("success", "Upload complete! Redirecting...");
-    
+
     setTimeout(() => {
       window.spaNavigate(`/${result.author}/${result.slug}`);
     }, 1000);
-  } else {
-    showStatus("error", await res.text());
+    return true;
   }
+
+  showStatus("error", await res.text());
+  return false;
 }
 
 function showStatus(type, message) {
