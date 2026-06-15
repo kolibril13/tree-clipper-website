@@ -798,6 +798,14 @@ a:hover {
     margin-bottom: 1em;
 }
 
+/* Meta block sits beside the image in the asset layout */
+.asset-layout .asset-meta {
+    flex: 1;
+    min-width: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
 /* Asset image container - always visible with fixed square size */
 .asset-img-container {
     flex-shrink: 0;
@@ -1909,4 +1917,155 @@ pre::-webkit-scrollbar {
 
 .extension-hint a:hover {
     color: #185ba0;
+}
+
+/* ============================================
+   NODE TREE VIEWER (geonodes-web-render embed)
+   ============================================ */
+
+/* Break out of the narrow 480px page column so the graph has room to breathe.
+   The page body is centered in the viewport, so left:50% + translateX(-50%)
+   recenters this wider element on the viewport. */
+.node-tree-section {
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(94vw, 1100px);
+    margin: 0.5em 0 1.75em;
+}
+
+.node-tree-panel {
+    display: flex;
+    flex-direction: column;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #1a1a1a;
+    border: 1px solid #2e303a;
+    box-shadow:
+        0 4px 14px rgba(0, 0, 0, 0.18),
+        0 18px 50px rgba(0, 0, 0, 0.14);
+}
+
+.node-tree-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6em 0.9em;
+    background: linear-gradient(180deg, #23252e 0%, #1d1f27 100%);
+    border-bottom: 1px solid #2e303a;
+}
+
+.node-tree-panel__title {
+    display: flex;
+    align-items: center;
+    gap: 0.45em;
+    font-size: 0.9em;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #f3f4f6;
+}
+
+.node-tree-panel__icon {
+    color: #c084fc;
+    font-size: 1.05em;
+}
+
+.node-tree-fullscreen {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    padding: 0.35em 0.75em;
+    background: rgba(255, 255, 255, 0.06);
+    color: #cbd5e1;
+    border: 1px solid #3a3d49;
+    border-radius: 7px;
+    font-size: 0.82em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.node-tree-fullscreen:hover {
+    background: rgba(192, 132, 252, 0.16);
+    border-color: #c084fc80;
+    color: #f3f4f6;
+}
+
+.node-tree-fullscreen__icon {
+    font-size: 1.05em;
+    line-height: 1;
+}
+
+.node-tree-canvas {
+    position: relative;
+    width: 100%;
+    height: clamp(360px, 68vh, 640px);
+    background: #1a1a1a;
+}
+
+.node-tree-canvas__loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    font-size: 0.9em;
+}
+
+/* The mounted embed fills the canvas box. */
+.node-tree-canvas .geonodes-embed {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+}
+
+/* Fullscreen mode */
+.node-tree-section--fullscreen {
+    position: fixed;
+    inset: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    transform: none;
+    z-index: 1000;
+}
+
+.node-tree-section--fullscreen .node-tree-panel {
+    height: 100%;
+    border-radius: 0;
+    border: none;
+}
+
+.node-tree-section--fullscreen .node-tree-canvas {
+    height: auto;
+    flex: 1;
+}
+
+body.node-tree-fullscreen-open {
+    overflow: hidden;
+}
+
+/* Collapsible raw payload */
+.asset-raw {
+    margin-bottom: 1.25em;
+}
+
+.asset-raw > summary {
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 500;
+    color: #6b7280;
+    padding: 0.4em 0;
+    user-select: none;
+    list-style: revert;
+}
+
+.asset-raw > summary:hover {
+    color: #374151;
+}
+
+.asset-raw[open] > summary {
+    margin-bottom: 0.6em;
 }

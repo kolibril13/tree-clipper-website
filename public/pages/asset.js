@@ -1,4 +1,6 @@
 // Asset detail page
+import { mountGraphView, unmountGraphView } from 'geonodes-web-render/embed';
+import 'geonodes-web-render/dist/embed.css';
 
 // Asset cache for prefetched data
 const assetCache = new Map();
@@ -13,23 +15,44 @@ export function template(params) {
     <h1>
       <span id="asset-title" style="color: #232323;">&nbsp;</span>
     </h1>
-    
+
+    <!-- Node tree viewer (breaks out wider than the page column on desktop) -->
+    <section id="node-tree-section" class="node-tree-section" hidden>
+      <div class="node-tree-panel">
+        <div class="node-tree-panel__header">
+          <span class="node-tree-panel__title">
+            <span class="node-tree-panel__icon">◇</span> Node Tree
+          </span>
+          <button id="node-tree-fullscreen" class="node-tree-fullscreen" type="button" title="Toggle fullscreen">
+            <span class="node-tree-fullscreen__icon">⤢</span>
+            <span class="node-tree-fullscreen__label">Fullscreen</span>
+          </button>
+        </div>
+        <div id="node-tree-canvas" class="node-tree-canvas">
+          <div class="node-tree-canvas__loading">Loading node tree…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Compatibility info section -->
+    <div id="compat-info" class="asset-tags-detail" style="display: none;"></div>
+
     <div class="asset-layout">
       <div id="asset-img-container" class="asset-img-container">
         <img id="asset-img" src="" class="asset-img" decoding="async">
       </div>
+      <div id="asset-meta" class="asset-meta"></div>
+    </div>
+
+    <!-- Raw payload (collapsible) -->
+    <details class="asset-raw">
+      <summary>Asset data</summary>
       <div class="copy-asset">
-        <p>Asset data:</p>
         <pre id="asset-data">Loading...</pre>
         <button id="copy-button" class="copy-button">Copy</button>
       </div>
-    </div>
-    
-    <!-- Compatibility info section -->
-    <div id="compat-info" class="asset-tags-detail" style="display: none;"></div>
-    
-    <div id="asset-meta" class="asset-meta"></div>
-    
+    </details>
+
     <!-- Blender extension reference -->
     <div class="extension-hint">
       Import this asset in Blender using the <a href="https://extensions.blender.org/add-ons/tree-clipper/" target="_blank" rel="noopener">Tree Clipper extension</a>
@@ -49,10 +72,47 @@ function getElements() {
       compat: document.getElementById("compat-info"),
       img: document.getElementById("asset-img"),
       imgContainer: document.getElementById("asset-img-container"),
-      copyBtn: document.getElementById("copy-button")
+      copyBtn: document.getElementById("copy-button"),
+      treeSection: document.getElementById("node-tree-section"),
+      treeCanvas: document.getElementById("node-tree-canvas"),
+      fullscreenBtn: document.getElementById("node-tree-fullscreen")
     };
   }
   return elements;
+}
+
+// Currently mounted graph payload, so we can re-mount (and re-fit) on resize /
+// fullscreen toggles.
+let mountedPayload = null;
+
+function renderGraph(payload) {
+  const els = getElements();
+  if (!els.treeCanvas || !payload) return;
+  mountedPayload = payload;
+  els.treeCanvas.innerHTML = '';
+  mountGraphView(els.treeCanvas, { payload });
+}
+
+function toggleFullscreen() {
+  const els = getElements();
+  if (!els.treeSection) return;
+  const entering = !els.treeSection.classList.contains('node-tree-section--fullscreen');
+  els.treeSection.classList.toggle('node-tree-section--fullscreen', entering);
+  document.body.classList.toggle('node-tree-fullscreen-open', entering);
+  if (els.fullscreenBtn) {
+    const label = els.fullscreenBtn.querySelector('.node-tree-fullscreen__label');
+    if (label) label.textContent = entering ? 'Exit' : 'Fullscreen';
+  }
+  // React Flow only auto-fits on mount, so re-mount to re-fit the new size.
+  if (mountedPayload) renderGraph(mountedPayload);
+}
+
+function handleFullscreenKey(e) {
+  if (e.key !== 'Escape') return;
+  const els = getElements();
+  if (els.treeSection && els.treeSection.classList.contains('node-tree-section--fullscreen')) {
+    toggleFullscreen();
+  }
 }
 
 export function init(params) {
@@ -60,20 +120,36 @@ export function init(params) {
   elements = null;
   
   const els = getElements();
-  
+  mountedPayload = null;
+
   // Set up copy button
   if (els.copyBtn) {
     els.copyBtn.addEventListener('click', copyAssetData);
   }
-  
+
+  // Set up node-tree fullscreen toggle
+  if (els.fullscreenBtn) {
+    els.fullscreenBtn.addEventListener('click', toggleFullscreen);
+  }
+  document.addEventListener('keydown', handleFullscreenKey);
+
   // Start loading asset immediately (don't await - let it render progressively)
   loadAsset(params.username, params.slug);
-  
+
   // Return cleanup function
   return () => {
     if (els.copyBtn) {
       els.copyBtn.removeEventListener('click', copyAssetData);
     }
+    if (els.fullscreenBtn) {
+      els.fullscreenBtn.removeEventListener('click', toggleFullscreen);
+    }
+    document.removeEventListener('keydown', handleFullscreenKey);
+    document.body.classList.remove('node-tree-fullscreen-open');
+    if (els.treeCanvas) {
+      try { unmountGraphView(els.treeCanvas); } catch (e) { /* noop */ }
+    }
+    mountedPayload = null;
     elements = null;
   };
 }
@@ -155,6 +231,14 @@ async function loadAsset(username, slug) {
     
     // Update asset data immediately (most important for user)
     els.data.textContent = asset.asset_data || "No data available";
+
+    // Render the interactive node tree from the payload. The component handles
+    // both "TreeClipper::" payloads and raw JSON, and shows its own decode
+    // error if the data is unreadable.
+    if (asset.asset_data && els.treeSection) {
+      els.treeSection.hidden = false;
+      renderGraph(asset.asset_data);
+    }
     
     // Update meta info (author, description, dates)
     const author = asset.author || "Unknown";
