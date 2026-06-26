@@ -29,18 +29,12 @@ export function template(params) {
     <!-- Node tree viewer comes last; breaks out wider than the page column on desktop -->
     <section id="node-tree-section" class="node-tree-section" hidden>
       <div class="node-tree-panel">
-        <div class="node-tree-panel__header">
-          <span class="node-tree-panel__title">
-            <span class="node-tree-panel__icon">◇</span> Node Tree
-          </span>
-          <button id="node-tree-fullscreen" class="node-tree-fullscreen" type="button" title="Toggle fullscreen">
-            <span class="node-tree-fullscreen__icon">⤢</span>
-            <span class="node-tree-fullscreen__label">Fullscreen</span>
-          </button>
-        </div>
         <div id="node-tree-canvas" class="node-tree-canvas">
           <div class="node-tree-canvas__loading">Loading node tree…</div>
         </div>
+        <button id="node-tree-fullscreen" class="node-tree-fullscreen" type="button" title="Toggle fullscreen" aria-label="Toggle fullscreen" aria-pressed="false">
+          <span class="node-tree-fullscreen__icon">⤢</span>
+        </button>
       </div>
     </section>
   `;
@@ -86,8 +80,9 @@ function toggleFullscreen() {
   els.treeSection.classList.toggle('node-tree-section--fullscreen', entering);
   document.body.classList.toggle('node-tree-fullscreen-open', entering);
   if (els.fullscreenBtn) {
-    const label = els.fullscreenBtn.querySelector('.node-tree-fullscreen__label');
-    if (label) label.textContent = entering ? 'Exit' : 'Fullscreen';
+    els.fullscreenBtn.title = entering ? 'Exit fullscreen' : 'Toggle fullscreen';
+    els.fullscreenBtn.setAttribute('aria-label', els.fullscreenBtn.title);
+    els.fullscreenBtn.setAttribute('aria-pressed', entering ? 'true' : 'false');
   }
   // React Flow only auto-fits on mount, so re-mount to re-fit the new size.
   if (mountedPayload) renderGraph(mountedPayload);

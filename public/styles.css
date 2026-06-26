@@ -1911,6 +1911,7 @@ a:hover {
 }
 
 .node-tree-panel {
+    position: relative;
     display: flex;
     flex-direction: column;
     border-radius: 14px;
@@ -1946,29 +1947,35 @@ a:hover {
     font-size: 1.05em;
 }
 
+/* Floating control that lives in the bottom-left corner of the canvas, styled to
+   blend in with the embed's own zoom controls (which sit at left:15px). */
 .node-tree-fullscreen {
+    position: absolute;
+    bottom: 15px;
+    left: 49px;
+    z-index: 6;
     display: inline-flex;
     align-items: center;
-    gap: 0.4em;
-    padding: 0.35em 0.75em;
-    background: rgba(255, 255, 255, 0.06);
-    color: #3a3f4b;
-    border: 1px solid #3a3d49;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    background: #2b2b2b;
+    color: #f8f8f8;
+    border: 1px solid #5b5b5b;
     border-radius: 7px;
-    font-size: 0.82em;
-    font-weight: 500;
+    box-shadow: 0 0 2px 1px rgba(0, 0, 0, 0.08);
     cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    transition: background 0.15s ease, color 0.15s ease;
 }
 
 .node-tree-fullscreen:hover {
-    background: rgba(192, 132, 252, 0.16);
-    border-color: #c084fc80;
-    color: #2a2e38;
+    background: #3e3e3e;
+    color: #fff;
 }
 
 .node-tree-fullscreen__icon {
-    font-size: 1.05em;
+    font-size: 1.1em;
     line-height: 1;
 }
 
@@ -1994,6 +2001,20 @@ a:hover {
     position: absolute;
     inset: 0;
     height: 100%;
+}
+
+/* Read-only viewer: nothing inside should be text-selectable (badge, node
+   labels, copy button text). Copy still works via the button click. */
+.node-tree-canvas,
+.node-tree-canvas * {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Suppress the embed's purple "engaged" accent outline so the canvas stays
+   frameless once the user starts interacting with it. */
+.node-tree-canvas .gn-canvas-wrapper--engaged {
+    outline: none;
 }
 
 /* Fullscreen mode */
