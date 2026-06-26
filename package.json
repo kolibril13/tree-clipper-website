@@ -14,7 +14,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2",
     "cropperjs": "^2.1.1",
-    "geonodes-web-render": "^0.3.26",
+    "geonodes-web-render": "^0.3.27",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   }
