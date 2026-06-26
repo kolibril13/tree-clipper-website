@@ -74,7 +74,9 @@ function renderGraph(payload) {
   if (!els.treeCanvas || !payload) return;
   mountedPayload = payload;
   els.treeCanvas.innerHTML = '';
-  mountGraphView(els.treeCanvas, { payload });
+  // Read-only viewer: disable node selection (left-drag pans) and the
+  // copy action / "Copy TreeClipper Magic String" button.
+  mountGraphView(els.treeCanvas, { payload, showCopyButton: false, allowSelection: false });
 }
 
 function toggleFullscreen() {

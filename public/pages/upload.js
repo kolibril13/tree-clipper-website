@@ -170,7 +170,9 @@ function renderGraphPreview(raw) {
   renderedGraphPayload = raw;
   section.hidden = false;
   canvas.innerHTML = '';
-  mountGraphView(canvas, { payload: raw });
+  // Read-only preview: disable node selection (left-drag pans) and the
+  // copy action / "Copy TreeClipper Magic String" button.
+  mountGraphView(canvas, { payload: raw, showCopyButton: false, allowSelection: false });
 }
 
 export async function init() {
