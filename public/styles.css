@@ -1902,6 +1902,14 @@ a:hover {
     margin: 2em 0 0.5em;
 }
 
+/* Inline variant (upload form): no viewport breakout; aligns with the column. */
+.node-tree-section--inline {
+    left: auto;
+    transform: none;
+    width: 100%;
+    margin: 2em 0;
+}
+
 .node-tree-panel {
     display: flex;
     flex-direction: column;

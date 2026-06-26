@@ -90,8 +90,10 @@ export function template() {
           <small id="compression-note" class="compression-note" style="display: none;">Image will be slightly compressed for faster loading</small>
         </div>
 
+        <button type="submit">Submit Asset</button>
+
         <!-- Live node-tree preview, rendered from the pasted asset data -->
-        <section id="node-tree-section" class="node-tree-section" hidden>
+        <section id="node-tree-section" class="node-tree-section node-tree-section--inline" hidden>
           <div class="node-tree-panel">
             <div class="node-tree-panel__header">
               <span class="node-tree-panel__title">
@@ -103,8 +105,6 @@ export function template() {
             </div>
           </div>
         </section>
-
-        <button type="submit">Submit Asset</button>
       </div>
     </form>
 
