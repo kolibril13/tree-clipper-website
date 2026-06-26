@@ -1,9 +1,32 @@
 // Upload asset page
 import { supabase, ensureUsername } from '/auth.js';
 import Cropper from 'cropperjs';
-import 'cropperjs/dist/cropper.css';
+import { mountGraphView, unmountGraphView } from 'geonodes-web-render/embed';
+import 'geonodes-web-render/dist/embed.css';
 
 export const title = 'Upload Asset – Tree Clipper';
+
+// Cropper.js v2 template: square (1:1) selection covering the full image.
+const CROPPER_TEMPLATE = `
+  <cropper-canvas background>
+    <cropper-image rotatable scalable translatable></cropper-image>
+    <cropper-shade hidden></cropper-shade>
+    <cropper-handle action="select" plain></cropper-handle>
+    <cropper-selection initial-coverage="1" movable resizable aspect-ratio="1" outlined>
+      <cropper-grid role="grid" covered></cropper-grid>
+      <cropper-crosshair centered></cropper-crosshair>
+      <cropper-handle action="move" theme-color="rgba(255, 255, 255, 0.35)"></cropper-handle>
+      <cropper-handle action="n-resize"></cropper-handle>
+      <cropper-handle action="e-resize"></cropper-handle>
+      <cropper-handle action="s-resize"></cropper-handle>
+      <cropper-handle action="w-resize"></cropper-handle>
+      <cropper-handle action="ne-resize"></cropper-handle>
+      <cropper-handle action="nw-resize"></cropper-handle>
+      <cropper-handle action="se-resize"></cropper-handle>
+      <cropper-handle action="sw-resize"></cropper-handle>
+    </cropper-selection>
+  </cropper-canvas>
+`;
 
 export function template() {
   return `
@@ -67,6 +90,20 @@ export function template() {
           <small id="compression-note" class="compression-note" style="display: none;">Image will be slightly compressed for faster loading</small>
         </div>
 
+        <!-- Live node-tree preview, rendered from the pasted asset data -->
+        <section id="node-tree-section" class="node-tree-section" hidden>
+          <div class="node-tree-panel">
+            <div class="node-tree-panel__header">
+              <span class="node-tree-panel__title">
+                <span class="node-tree-panel__icon">◇</span> Node Tree Preview
+              </span>
+            </div>
+            <div id="node-tree-canvas" class="node-tree-canvas">
+              <div class="node-tree-canvas__loading">Loading node tree…</div>
+            </div>
+          </div>
+        </section>
+
         <button type="submit">Submit Asset</button>
       </div>
     </form>
@@ -107,8 +144,34 @@ let pendingImageFile = null;
 
 let cropperInstance = null;
 
+// Raw payload currently mounted in the node-tree preview, so we don't re-mount
+// the (expensive) graph view on every keystroke when the data hasn't changed.
+let renderedGraphPayload = null;
+
 // Event handlers stored for cleanup
 let handlers = {};
+
+// Mount/refresh/clear the live node-tree preview from the pasted asset data.
+function renderGraphPreview(raw) {
+  const section = document.getElementById("node-tree-section");
+  const canvas = document.getElementById("node-tree-canvas");
+  if (!section || !canvas) return;
+
+  if (!raw) {
+    if (renderedGraphPayload !== null) {
+      try { unmountGraphView(canvas); } catch (e) { /* noop */ }
+      renderedGraphPayload = null;
+    }
+    section.hidden = true;
+    return;
+  }
+
+  if (raw === renderedGraphPayload) return;
+  renderedGraphPayload = raw;
+  section.hidden = false;
+  canvas.innerHTML = '';
+  mountGraphView(canvas, { payload: raw });
+}
 
 export async function init() {
   // Ensure user has a username - if this returns false, user was redirected
@@ -133,6 +196,7 @@ export async function init() {
   isSubmitting = false;
   selectedImageFile = null;
   parsedAssetMeta = null;
+  renderedGraphPayload = null;
   
   // Auth state handlers
   async function updateAuthUI(user) {
@@ -245,6 +309,7 @@ export async function init() {
     clearTimeout(statusTimeout);
     clearTimeout(slugCheckTimeout);
     closeCropper();
+    renderGraphPreview(null);
     assetDataInput.removeEventListener("input", handlers.assetDataInput);
     titleInput.removeEventListener("input", handlers.titleInput);
     imageDropzone.removeEventListener("click", handlers.dropzoneClick);
@@ -328,12 +393,13 @@ async function updateAssetMeta() {
   if (!raw) {
     assetMeta.style.display = "none";
     parsedAssetMeta = null;
+    renderGraphPreview(null);
     return;
   }
-  
+
   const meta = await decodeTreeClipperData(raw);
   parsedAssetMeta = meta;
-  
+
   if (meta && (meta.nodeType || meta.blenderVersion || meta.treeclipperVersion)) {
     metaNodeType.textContent = meta.nodeType ? getNodeTypeLabel(meta.nodeType) : '—';
     metaBlenderVersion.textContent = meta.blenderVersion || '—';
@@ -342,6 +408,10 @@ async function updateAssetMeta() {
   } else {
     assetMeta.style.display = "none";
   }
+
+  // Render the live node-tree preview once the payload decodes; clear it
+  // otherwise so partial/invalid input doesn't leave a stale graph behind.
+  renderGraphPreview(meta ? raw : null);
   
   // Auto-fill title from asset name if title is empty
   if (meta?.name && !titleInput.value.trim()) {
@@ -427,39 +497,23 @@ function openCropper(file) {
   const cropperModal = document.getElementById("cropper-modal");
   const url = URL.createObjectURL(file);
   cropperImage.onload = () => {
-    if (cropperInstance) cropperInstance.destroy();
-    requestAnimationFrame(() => {
-      cropperInstance = new Cropper(cropperImage, {
-        aspectRatio: 1,
-        viewMode: 1,
-        dragMode: "move",
-        autoCrop: true,
-        autoCropArea: 1,
-        restore: false,
-        ready() {
-          const imageData = this.cropper.getImageData();
-          if (imageData.naturalWidth === imageData.naturalHeight) {
-            const canvasData = this.cropper.getCanvasData();
-            this.cropper.setCropBoxData({
-              left: canvasData.left,
-              top: canvasData.top,
-              width: canvasData.width,
-              height: canvasData.height
-            });
-          }
-        }
-      });
-    });
+    destroyCropper();
+    cropperInstance = new Cropper(cropperImage, { template: CROPPER_TEMPLATE });
   };
   cropperImage.src = url;
   cropperModal.style.display = "flex";
 }
 
-function closeCropper() {
+// Cropper.js v2 has no destroy(); tear down by removing the injected <cropper-canvas>.
+function destroyCropper() {
   if (cropperInstance) {
-    cropperInstance.destroy();
+    cropperInstance.getCropperCanvas()?.remove();
     cropperInstance = null;
   }
+}
+
+function closeCropper() {
+  destroyCropper();
   const cropperImage = document.getElementById("cropper-image");
   if (cropperImage?.src?.startsWith("blob:")) URL.revokeObjectURL(cropperImage.src);
   document.getElementById("cropper-modal").style.display = "none";
@@ -471,11 +525,14 @@ async function handleConfirmCrop() {
   const imagePreview = document.getElementById("image-preview");
   const imageDropzone = document.getElementById("image-dropzone");
   const compressionNote = document.getElementById("compression-note");
-  const canvas = cropperInstance.getCroppedCanvas({
-    maxWidth: 512,
-    maxHeight: 512,
-    fillColor: "#fff",
-    imageSmoothingQuality: "high"
+  const canvas = await cropperInstance.getCropperSelection().$toCanvas({
+    width: 512,
+    height: 512,
+    beforeDraw: (ctx, c) => {
+      ctx.imageSmoothingQuality = "high";
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, c.width, c.height);
+    }
   });
   const croppedBlob = await new Promise(resolve => {
     canvas.toBlob(resolve, "image/jpeg", 0.92);

@@ -1829,6 +1829,13 @@ a:hover {
     max-width: 100%;
 }
 
+/* Cropper.js v2 injects a <cropper-canvas> custom element next to the source <img>. */
+.cropper-wrap cropper-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
 .cropper-actions {
     display: flex;
     gap: 1em;

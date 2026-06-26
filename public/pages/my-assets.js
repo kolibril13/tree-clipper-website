@@ -1,9 +1,30 @@
 // My Assets page
 import { supabase, ensureUsername } from '/auth.js';
 import Cropper from 'cropperjs';
-import 'cropperjs/dist/cropper.css';
 
 export const title = 'My Assets – Tree Clipper';
+
+// Cropper.js v2 template: square (1:1) selection covering the full image.
+const CROPPER_TEMPLATE = `
+  <cropper-canvas background>
+    <cropper-image rotatable scalable translatable></cropper-image>
+    <cropper-shade hidden></cropper-shade>
+    <cropper-handle action="select" plain></cropper-handle>
+    <cropper-selection initial-coverage="1" movable resizable aspect-ratio="1" outlined>
+      <cropper-grid role="grid" covered></cropper-grid>
+      <cropper-crosshair centered></cropper-crosshair>
+      <cropper-handle action="move" theme-color="rgba(255, 255, 255, 0.35)"></cropper-handle>
+      <cropper-handle action="n-resize"></cropper-handle>
+      <cropper-handle action="e-resize"></cropper-handle>
+      <cropper-handle action="s-resize"></cropper-handle>
+      <cropper-handle action="w-resize"></cropper-handle>
+      <cropper-handle action="ne-resize"></cropper-handle>
+      <cropper-handle action="nw-resize"></cropper-handle>
+      <cropper-handle action="se-resize"></cropper-handle>
+      <cropper-handle action="sw-resize"></cropper-handle>
+    </cropper-selection>
+  </cropper-canvas>
+`;
 
 export function template() {
   return `
@@ -614,39 +635,23 @@ function openCropper(file) {
   const cropperModal = document.getElementById("cropper-modal");
   const url = URL.createObjectURL(file);
   cropperImage.onload = () => {
-    if (cropperInstance) cropperInstance.destroy();
-    requestAnimationFrame(() => {
-      cropperInstance = new Cropper(cropperImage, {
-        aspectRatio: 1,
-        viewMode: 1,
-        dragMode: "move",
-        autoCrop: true,
-        autoCropArea: 1,
-        restore: false,
-        ready() {
-          const imageData = this.cropper.getImageData();
-          if (imageData.naturalWidth === imageData.naturalHeight) {
-            const canvasData = this.cropper.getCanvasData();
-            this.cropper.setCropBoxData({
-              left: canvasData.left,
-              top: canvasData.top,
-              width: canvasData.width,
-              height: canvasData.height
-            });
-          }
-        }
-      });
-    });
+    destroyCropper();
+    cropperInstance = new Cropper(cropperImage, { template: CROPPER_TEMPLATE });
   };
   cropperImage.src = url;
   cropperModal.style.display = "flex";
 }
 
-function closeCropper() {
+// Cropper.js v2 has no destroy(); tear down by removing the injected <cropper-canvas>.
+function destroyCropper() {
   if (cropperInstance) {
-    cropperInstance.destroy();
+    cropperInstance.getCropperCanvas()?.remove();
     cropperInstance = null;
   }
+}
+
+function closeCropper() {
+  destroyCropper();
   const cropperImage = document.getElementById("cropper-image");
   if (cropperImage?.src?.startsWith("blob:")) URL.revokeObjectURL(cropperImage.src);
   document.getElementById("cropper-modal").style.display = "none";
@@ -658,11 +663,14 @@ async function handleConfirmCrop() {
   const editImagePreview = document.getElementById("edit-image-preview");
   const editImageDropzone = document.getElementById("edit-image-dropzone");
   const currentImageContainer = document.getElementById("current-image-container");
-  const canvas = cropperInstance.getCroppedCanvas({
-    maxWidth: 512,
-    maxHeight: 512,
-    fillColor: "#fff",
-    imageSmoothingQuality: "high"
+  const canvas = await cropperInstance.getCropperSelection().$toCanvas({
+    width: 512,
+    height: 512,
+    beforeDraw: (ctx, c) => {
+      ctx.imageSmoothingQuality = "high";
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, c.width, c.height);
+    }
   });
   const croppedBlob = await new Promise(resolve => {
     canvas.toBlob(resolve, "image/jpeg", 0.92);
