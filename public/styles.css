@@ -740,6 +740,45 @@ a:hover {
     color: #767d89;
 }
 
+/* Packed-node preview (on detail page): shows this asset collapsed into a
+   single "Group" node, as it would look dropped into another node tree.
+   Sits inline next to the image, borderless so it blends into the page
+   instead of reading as its own panel. */
+.packed-node-inline {
+    position: relative;
+    flex-shrink: 0;
+    width: 210px;
+    height: 200px;
+    /* Purely decorative: no hover/selection/drag interaction of any kind. */
+    pointer-events: none;
+}
+
+.packed-node-inline.hidden,
+.packed-node-inline[hidden] {
+    display: none;
+}
+
+.packed-node-inline .geonodes-embed {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+}
+
+/* Static-feeling preview: nothing selectable, and hide the zoom/version/
+   breadcrumb chrome that only makes sense for the full interactive graph. */
+.packed-node-inline,
+.packed-node-inline * {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.packed-node-inline .react-flow__controls,
+.packed-node-inline .react-flow__attribution,
+.packed-node-inline .gn-top-left,
+.packed-node-inline .gn-zoom-hint {
+    display: none;
+}
+
 /* Upload Button (homepage) */
 .upload-btn {
     display: inline-flex;
@@ -885,6 +924,10 @@ a:hover {
         max-width: 200px;
         height: auto;
         aspect-ratio: 1;
+    }
+    .packed-node-inline {
+        width: 100%;
+        height: 180px;
     }
 
     .assets-list .asset-info {

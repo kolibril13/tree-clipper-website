@@ -5,6 +5,113 @@ import 'geonodes-web-render/dist/embed.css';
 // Asset cache for prefetched data
 const assetCache = new Map();
 
+const TREECLIPPER_PREFIX = "TreeClipper::";
+
+// Mirrors geonodes-web-render's decodeTreeClipperPayload: strip the magic
+// prefix, base64-decode, gunzip if the bytes look gzipped, then UTF-8 decode.
+async function decodeTreeClipperPayload(raw) {
+  const trimmed = raw.trim();
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) return trimmed;
+
+  const b64 = trimmed.startsWith(TREECLIPPER_PREFIX) ? trimmed.slice(TREECLIPPER_PREFIX.length) : trimmed;
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+  const isGzip = bytes.length >= 2 && bytes[0] === 31 && bytes[1] === 139;
+  const finalBytes = isGzip
+    ? new Uint8Array(await (await new Response(
+        new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))
+      ).blob()).arrayBuffer())
+    : bytes;
+
+  return new TextDecoder().decode(finalBytes);
+}
+
+// The root tree is whichever node tree isn't referenced as a sub-group by
+// another tree (same rule geonodes-web-render uses to pick what to display).
+function findRootTree(data) {
+  if (!data || !Array.isArray(data.node_trees) || data.node_trees.length === 0) return null;
+
+  const referenced = new Set();
+  for (const tree of data.node_trees) {
+    const items = tree?.data?.nodes?.data?.items ?? [];
+    for (const node of items) {
+      const groupTreeId = node?.data?.node_tree;
+      if (groupTreeId != null) referenced.add(String(groupTreeId));
+    }
+  }
+
+  const topLevel = data.node_trees.filter(tree => !referenced.has(String(tree.id)));
+  return topLevel.find(tree => tree.data?.is_modifier) ?? topLevel[0] ?? data.node_trees[0];
+}
+
+// A socket item is a "real" exposed parameter, not the blank trailing "+"
+// socket Blender adds so you can drag out a new one.
+function hasSocketName(socket) {
+  return !!socket?.data?.name;
+}
+
+// Builds a synthetic single-node payload representing this asset as it would
+// appear collapsed into a single "Group" node if used inside another node
+// tree: header = the asset's name, inputs = the root tree's Group Input
+// outputs, outputs = the root tree's Group Output inputs. Reusing the actual
+// socket objects (name/type/default_value/etc. straight from the export)
+// means the same rendering code geonodes-web-render already uses for the
+// full graph draws this preview identically - same colors, same layout.
+function buildPackedNodePayload(rootTree, title) {
+  const items = rootTree?.data?.nodes?.data?.items ?? [];
+  const groupInputNode = items.find(node => node?.data?.bl_idname === "NodeGroupInput");
+  const groupOutputNode = items.find(node => node?.data?.bl_idname === "NodeGroupOutput");
+
+  // Group Input's outputs are what flow INTO the rest of the tree, i.e. what
+  // you'd plug values into from outside - so they become this node's inputs.
+  // Group Output's inputs are what the tree produces - so they become this
+  // node's (single) output.
+  const inputs = (groupInputNode?.data?.outputs?.data?.items ?? []).filter(hasSocketName);
+  const outputs = (groupOutputNode?.data?.inputs?.data?.items ?? []).filter(hasSocketName);
+  if (inputs.length === 0 && outputs.length === 0) return null;
+
+  return JSON.stringify({
+    node_trees: [{
+      id: 0,
+      data: {
+        name: title,
+        nodes: {
+          data: {
+            items: [{
+              id: 0,
+              data: {
+                location: [0, 0],
+                location_absolute: [0, 0],
+                width: 160,
+                name: title,
+                label: "",
+                bl_idname: "NodeGroup",
+                inputs: { data: { items: inputs } },
+                outputs: { data: { items: outputs } },
+                parent: null
+              }
+            }]
+          }
+        },
+        links: { data: { items: [] } }
+      }
+    }]
+  });
+}
+
+async function loadPackedNodePayload(rawPayload, title) {
+  try {
+    const jsonText = await decodeTreeClipperPayload(rawPayload);
+    const data = JSON.parse(jsonText);
+    return buildPackedNodePayload(findRootTree(data), title);
+  } catch (err) {
+    console.error("Failed to build packed-node preview:", err);
+    return null;
+  }
+}
+
 export function title(params) {
   return `Asset - Tree Clipper`;
 }
@@ -23,6 +130,10 @@ export function template(params) {
       <div id="asset-img-container" class="asset-img-container">
         <img id="asset-img" src="" class="asset-img" decoding="async">
       </div>
+      <!-- Borderless preview of this asset collapsed into a single "Group" node,
+           as it would appear if used inside another node tree (Group Input/
+           Output only). Sits inline with the image, no panel chrome. -->
+      <div id="packed-node-inline" class="packed-node-inline" hidden></div>
       <div id="asset-meta" class="asset-meta"></div>
     </div>
 
@@ -53,7 +164,8 @@ function getElements() {
       imgContainer: document.getElementById("asset-img-container"),
       treeSection: document.getElementById("node-tree-section"),
       treeCanvas: document.getElementById("node-tree-canvas"),
-      fullscreenBtn: document.getElementById("node-tree-fullscreen")
+      fullscreenBtn: document.getElementById("node-tree-fullscreen"),
+      packedNodeInline: document.getElementById("packed-node-inline")
     };
   }
   return elements;
@@ -71,6 +183,22 @@ function renderGraph(payload) {
   // Read-only viewer: disable node selection so the single copy button
   // always copies the whole tree (no partial/per-selection copy).
   mountGraphView(els.treeCanvas, { payload, showCopyButton: true, allowSelection: false });
+}
+
+async function renderPackedNodePreview(rawPayload, title) {
+  const els = getElements();
+  if (!els.packedNodeInline) return;
+
+  const payload = await loadPackedNodePayload(rawPayload, title);
+  if (!payload) {
+    els.packedNodeInline.hidden = true;
+    return;
+  }
+
+  els.packedNodeInline.innerHTML = '';
+  // Static preview: no copy button (nothing to copy), no selection needed.
+  mountGraphView(els.packedNodeInline, { payload, showCopyButton: false, allowSelection: false });
+  els.packedNodeInline.hidden = false;
 }
 
 function toggleFullscreen() {
@@ -121,6 +249,9 @@ export function init(params) {
     document.body.classList.remove('node-tree-fullscreen-open');
     if (els.treeCanvas) {
       try { unmountGraphView(els.treeCanvas); } catch (e) { /* noop */ }
+    }
+    if (els.packedNodeInline) {
+      try { unmountGraphView(els.packedNodeInline); } catch (e) { /* noop */ }
     }
     mountedPayload = null;
     elements = null;
@@ -187,6 +318,7 @@ async function loadAsset(username, slug) {
     if (asset.asset_data && els.treeSection) {
       els.treeSection.hidden = false;
       renderGraph(asset.asset_data);
+      renderPackedNodePreview(asset.asset_data, asset.title || "Untitled Asset");
     }
     
     // Update meta info (author, description, dates)
