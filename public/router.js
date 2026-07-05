@@ -120,9 +120,10 @@ export async function navigate(path, pushState = true) {
   // Match route
   const { page, params: routeParams } = matchRoute(pathname);
 
-  // If page is null, do a full page navigation (e.g., auth callback)
+  // If page is null, do a full page navigation (e.g., auth callback).
+  // Use the full path — auth callbacks carry ?code=... in the query string.
   if (page === null) {
-    window.location.href = pathname;
+    window.location.href = path;
     return;
   }
 
@@ -178,6 +179,14 @@ export async function navigate(path, pushState = true) {
 
 // Handle link clicks - intercept internal navigation
 function handleClick(event) {
+  // Respect clicks a page handler already consumed
+  if (event.defaultPrevented) return;
+
+  // Let the browser handle modified clicks (new tab/window) and non-primary buttons
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+    return;
+  }
+
   // Find the closest anchor tag
   const anchor = event.target.closest('a');
   if (!anchor) return;

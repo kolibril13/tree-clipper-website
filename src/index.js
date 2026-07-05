@@ -252,8 +252,35 @@ export default {
       }
     );
 
+    // ========== ERROR REPORTING ==========
+
+    // POST /api/errors - Receive client-side error reports (from public/logger.js).
+    // Logged to console so they show up in `wrangler tail` / the dashboard.
+    if (url.pathname === "/api/errors" && request.method === "POST") {
+      try {
+        const text = await request.text();
+        if (text.length > 50_000) {
+          return new Response("Payload too large", { status: 413 });
+        }
+        const body = JSON.parse(text);
+        const reports = Array.isArray(body?.errors) ? body.errors.slice(0, 10) : [];
+        for (const report of reports) {
+          console.error("[client-error]", JSON.stringify({
+            level: report?.level,
+            message: report?.message,
+            url: report?.url,
+            timestamp: report?.timestamp,
+            data: report?.data
+          }));
+        }
+      } catch {
+        // Malformed report — drop it, never error back to the client
+      }
+      return new Response(null, { status: 204 });
+    }
+
     // ========== USER ROUTES ==========
-    
+
     // GET /api/users/me - Get current user's profile
     if (url.pathname === "/api/users/me" && request.method === "GET") {
       const { data: userData, error: userError } = await supabase.auth.getUser();

@@ -202,16 +202,14 @@ export async function init() {
   // Set up event listeners
   setupEventListeners();
 
-  // Check if we need to auto-open the edit modal (from the asset page)
+  // Auto-open the edit modal when arriving from an asset page's edit button.
+  // openEditModal fetches the asset itself, so it doesn't need the list loaded.
   const editAuthor = sessionStorage.getItem('editAssetAuthor');
   const editSlug = sessionStorage.getItem('editAssetSlug');
   if (editAuthor && editSlug) {
     sessionStorage.removeItem('editAssetAuthor');
     sessionStorage.removeItem('editAssetSlug');
-    // Delay to ensure the DOM is ready and assets are loaded
-    setTimeout(() => {
-      openEditModal(editAuthor, editSlug);
-    }, 100);
+    openEditModal(editAuthor, editSlug);
   }
 
   // Return cleanup function

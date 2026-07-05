@@ -184,7 +184,7 @@ describe('API Client', () => {
       expect(fetch.mock.calls[0][1].method).toBe('POST');
     });
 
-    it('should use DELETE for delete', async () => {
+    it('should use DELETE for delete and identify the entry via query params', async () => {
       const { entries } = await import('./api.js');
 
       fetch.mockResolvedValueOnce({
@@ -195,10 +195,14 @@ describe('API Client', () => {
 
       await entries.delete('alice', 'my-asset');
 
-      expect(fetch.mock.calls[0][1].method).toBe('DELETE');
+      const [url, options] = fetch.mock.calls[0];
+      expect(options.method).toBe('DELETE');
+      // Regression: the worker requires ?author=&slug= on DELETE
+      expect(url).toContain('author=alice');
+      expect(url).toContain('slug=my-asset');
     });
 
-    it('should use PUT for update', async () => {
+    it('should use PUT for update and identify the entry via query params', async () => {
       const { entries } = await import('./api.js');
 
       fetch.mockResolvedValueOnce({
@@ -209,7 +213,27 @@ describe('API Client', () => {
 
       await entries.update('alice', 'my-asset', { description: 'Updated' });
 
-      expect(fetch.mock.calls[0][1].method).toBe('PUT');
+      const [url, options] = fetch.mock.calls[0];
+      expect(options.method).toBe('PUT');
+      // Regression: the worker requires ?author=&slug= on PUT
+      expect(url).toContain('author=alice');
+      expect(url).toContain('slug=my-asset');
+      expect(options.body).toBe(JSON.stringify({ description: 'Updated' }));
+    });
+
+    it('should send Content-Type header with JSON bodies even when logged out', async () => {
+      const { entries } = await import('./api.js');
+
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        headers: new Map([['content-type', 'application/json']]),
+        json: async () => ({ slug: 'x' })
+      });
+
+      await entries.create({ title: 'Test', assetData: 'abc' });
+
+      const headers = fetch.mock.calls[0][1].headers;
+      expect(headers['Content-Type']).toBe('application/json');
     });
   });
 });

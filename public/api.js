@@ -14,18 +14,16 @@ class APIError extends Error {
 async function getAuthHeader() {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return null;
-  return {
-    'Authorization': `Bearer ${session.access_token}`,
-    'Content-Type': 'application/json'
-  };
+  return { 'Authorization': `Bearer ${session.access_token}` };
 }
 
 async function request(endpoint, options = {}) {
   const { method = 'GET', body, params, headers: customHeaders = {} } = options;
 
-  // Build URL with query params
+  // Build URL with query params (all methods — PUT/DELETE identify the
+  // target entry via ?author=&slug=)
   let url = endpoint;
-  if (params && method === 'GET') {
+  if (params) {
     const query = new URLSearchParams();
     Object.entries(params).forEach(([k, v]) => {
       if (v != null) query.append(k, v);
@@ -38,6 +36,7 @@ async function request(endpoint, options = {}) {
   const authHeaders = await getAuthHeader();
   const headers = {
     ...authHeaders,
+    ...(body != null ? { 'Content-Type': 'application/json' } : {}),
     ...customHeaders
   };
 

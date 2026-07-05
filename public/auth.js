@@ -261,6 +261,15 @@ export function getUserProfile() {
   return cachedUserProfile;
 }
 
+// Get the current user's profile, fetching it if not cached yet.
+// Returns null when logged out. Reuses the same cache/in-flight dedup
+// as the login corner, so this is usually free.
+export async function getSessionProfile() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return null;
+  return fetchUserProfile(session.access_token);
+}
+
 // Clear cached profile (called on logout)
 export function clearCachedProfile() {
   cachedUserProfile = null;

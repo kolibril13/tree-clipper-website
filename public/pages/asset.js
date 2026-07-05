@@ -1,7 +1,7 @@
 // Asset detail page
 import { mountGraphView, unmountGraphView } from 'geonodes-web-render/embed';
 import 'geonodes-web-render/dist/embed.css';
-import { supabase } from '/auth.js';
+import { getSessionProfile } from '../auth.js';
 
 // Asset cache for prefetched data
 const assetCache = new Map();
@@ -225,16 +225,20 @@ function getElements() {
 // fullscreen toggles.
 let mountedPayload = null;
 
-// Current session/user info for ownership checks
-let currentSession = null;
-
-async function checkUserSession() {
-  const { data: { session } } = await supabase.auth.getSession();
-  currentSession = session;
-  return session;
+// Show the edit link when the logged-in user is the asset's author.
+// Uses the cached profile from auth.js — no extra request in the common case.
+async function updateEditLinkVisibility(author) {
+  const els = getElements();
+  if (!els.editLink || !author) return;
+  try {
+    const profile = await getSessionProfile();
+    els.editLink.hidden = profile?.username?.toLowerCase() !== author.toLowerCase();
+  } catch {
+    // Logged out or profile fetch failed — keep the link hidden
+  }
 }
 
-async function handleEditClick(username, slug) {
+function handleEditClick(username, slug) {
   // Store the asset info in sessionStorage so my-assets can retrieve and auto-open the modal
   sessionStorage.setItem('editAssetAuthor', username);
   sessionStorage.setItem('editAssetSlug', slug);
@@ -403,8 +407,9 @@ async function loadAsset(username, slug) {
   const cacheKey = `${username}/${slug}`;
   const apiUrl = `/api/asset/${encodeURIComponent(username)}/${encodeURIComponent(slug)}`;
 
-  // Check user session for edit button visibility
-  await checkUserSession();
+  // Show the edit link if this asset belongs to the logged-in user.
+  // Fire-and-forget so it never delays rendering the asset itself.
+  updateEditLinkVisibility(username);
 
   try {
     // Check cache first (from prefetch), otherwise fetch
@@ -427,19 +432,6 @@ async function loadAsset(username, slug) {
       asset = await res.json();
     }
 
-    // Check if current user is the owner - show edit button if so
-    if (currentSession && asset.author) {
-      const { data: userProfile } = await supabase
-        .from('users')
-        .select('username')
-        .eq('id', currentSession.user.id)
-        .single();
-
-      if (userProfile?.username === asset.author && els.editLink) {
-        els.editLink.hidden = false;
-      }
-    }
-    
     // Batch DOM updates for better performance
     // Update page title
     document.title = `${asset.title || "Asset"} - Tree Clipper`;
