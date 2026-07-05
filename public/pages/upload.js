@@ -1,5 +1,6 @@
 // Upload asset page
 import { supabase, ensureUsername } from '/auth.js';
+import { users, slugs, entries, APIError } from '/api.js';
 import Cropper from 'cropperjs';
 import { mountGraphView, unmountGraphView } from 'geonodes-web-render/embed';
 import 'geonodes-web-render/dist/embed.css';
@@ -344,16 +345,9 @@ function updateMoreFieldsVisibility() {
 
 async function checkSlugAvailability(title) {
   const slugStatus = document.getElementById("slug-status");
-  
+
   if (!title.trim()) {
     slugStatus.textContent = "Cannot be changed later (used in URL)";
-    slugStatus.style.color = "#6b7280";
-    return;
-  }
-
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    slugStatus.textContent = "Log in to check availability";
     slugStatus.style.color = "#6b7280";
     return;
   }
@@ -362,10 +356,7 @@ async function checkSlugAvailability(title) {
   slugStatus.style.color = "#6b7280";
 
   try {
-    const res = await fetch(`/api/slug/check?title=${encodeURIComponent(title)}`, {
-      headers: { "Authorization": `Bearer ${session.access_token}` }
-    });
-    const data = await res.json();
+    const data = await slugs.check(title);
 
     if (data.error) {
       slugStatus.textContent = data.error;
@@ -378,8 +369,13 @@ async function checkSlugAvailability(title) {
       slugStatus.style.color = "#d97706";
     }
   } catch (err) {
-    slugStatus.textContent = "Failed to check availability";
-    slugStatus.style.color = "#dc2626";
+    if (err instanceof APIError) {
+      slugStatus.textContent = err.message;
+      slugStatus.style.color = "#dc2626";
+    } else {
+      slugStatus.textContent = "Failed to check availability";
+      slugStatus.style.color = "#dc2626";
+    }
   }
 }
 
@@ -577,91 +573,73 @@ async function handleFormSubmit(e) {
 // Returns true if the upload succeeded and a redirect is pending.
 async function submitAsset() {
   const titleInput = document.getElementById("title");
-
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    showStatus("error", "Please log in to upload assets.");
-    return;
-  }
-
   const title = titleInput.value.trim();
+
   if (!title) {
     showStatus("error", "Title is required");
     return;
   }
 
-  // Re-check slug availability
-  const slugRes = await fetch(`/api/slug/check?title=${encodeURIComponent(title)}`, {
-    headers: { "Authorization": `Bearer ${session.access_token}` }
-  });
-  const slugData = await slugRes.json();
-
-  if (slugData.error) {
-    showStatus("error", slugData.error);
-    return;
-  }
-
-  let imageUrl = null;
-
-  if (selectedImageFile) {
-    const profileRes = await fetch("/api/users/me", {
-      headers: { "Authorization": `Bearer ${session.access_token}` }
-    });
-    const profile = await profileRes.json();
-    if (!profile?.username) {
-      showStatus("error", "Please set a username first");
-      return;
-    }
-    
-    const filePath = `${profile.username}/asset-${Date.now()}.jpg`;
-
-    const { error } = await supabase.storage
-      .from("asset-images")
-      .upload(filePath, selectedImageFile, {
-        contentType: "image/jpeg"
-      });
-
-    if (error) {
-      showStatus("error", "Image upload failed: " + error.message);
+  try {
+    // Re-check slug availability
+    const slugData = await slugs.check(title);
+    if (slugData.error) {
+      showStatus("error", slugData.error);
       return;
     }
 
-    imageUrl = supabase.storage
-      .from("asset-images")
-      .getPublicUrl(filePath).data.publicUrl;
-  }
+    let imageUrl = null;
 
-  const payload = {
-    assetData: document.getElementById("asset-data").value.trim(),
-    title: title,
-    description: document.getElementById("description").value.trim() || null,
-    imageData: imageUrl,
-    nodeType: parsedAssetMeta?.nodeType || null,
-    blenderVersion: parsedAssetMeta?.blenderVersion || null,
-    treeclipperVersion: parsedAssetMeta?.treeclipperVersion || null
-  };
+    if (selectedImageFile) {
+      const profile = await users.getMe();
+      if (!profile?.username) {
+        showStatus("error", "Please set a username first");
+        return;
+      }
 
-  const res = await fetch("/api/entries", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${session.access_token}`
-    },
-    body: JSON.stringify(payload)
-  });
+      const filePath = `${profile.username}/asset-${Date.now()}.jpg`;
 
-  if (res.ok) {
-    const result = await res.json();
+      const { error } = await supabase.storage
+        .from("asset-images")
+        .upload(filePath, selectedImageFile, {
+          contentType: "image/jpeg"
+        });
+
+      if (error) {
+        showStatus("error", "Image upload failed: " + error.message);
+        return;
+      }
+
+      imageUrl = supabase.storage
+        .from("asset-images")
+        .getPublicUrl(filePath).data.publicUrl;
+    }
+
+    const payload = {
+      assetData: document.getElementById("asset-data").value.trim(),
+      title: title,
+      description: document.getElementById("description").value.trim() || null,
+      imageData: imageUrl,
+      nodeType: parsedAssetMeta?.nodeType || null,
+      blenderVersion: parsedAssetMeta?.blenderVersion || null,
+      treeclipperVersion: parsedAssetMeta?.treeclipperVersion || null
+    };
+
+    const result = await entries.create(payload);
     showStatus("success", "Upload complete! Redirecting...");
 
     setTimeout(() => {
       window.spaNavigate(`/${result.author}/${result.slug}`);
     }, 1000);
     return true;
+  } catch (err) {
+    if (err instanceof APIError) {
+      showStatus("error", err.message);
+    } else {
+      showStatus("error", "Upload failed: " + (err?.message || err));
+    }
+    return false;
   }
-
-  showStatus("error", await res.text());
-  return false;
 }
 
 function showStatus(type, message) {

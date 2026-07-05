@@ -1,4 +1,4 @@
-// SPA Router - handles client-side navigation
+// SPA Router - handles client-side navigation with URL/state syncing
 // The login corner is rendered once and persists across page navigations
 
 // Route definitions - supports both with and without .html extension
@@ -27,8 +27,20 @@ const routes = [
 // Page modules - lazy loaded
 const pageModules = {};
 
-// Current page cleanup function
+// Current page state
 let currentCleanup = null;
+let currentRoute = null;
+
+// Parse URL into path and query params
+function parseUrl(url) {
+  const urlObj = new URL(url, window.location.origin);
+  return {
+    pathname: urlObj.pathname,
+    search: urlObj.search,
+    hash: urlObj.hash,
+    params: Object.fromEntries(urlObj.searchParams)
+  };
+}
 
 // Get the content container
 function getContentContainer() {
@@ -100,16 +112,20 @@ export async function navigate(path, pushState = true) {
     console.error('SPA content container not found');
     return;
   }
-  
+
+  // Parse URL to extract pathname and query params
+  const parsed = parseUrl(path);
+  const pathname = parsed.pathname;
+
   // Match route
-  const { page, params } = matchRoute(path);
-  
+  const { page, params: routeParams } = matchRoute(pathname);
+
   // If page is null, do a full page navigation (e.g., auth callback)
   if (page === null) {
-    window.location.href = path;
+    window.location.href = pathname;
     return;
   }
-  
+
   // Run cleanup for current page
   if (currentCleanup) {
     try {
@@ -119,35 +135,41 @@ export async function navigate(path, pushState = true) {
     }
     currentCleanup = null;
   }
-  
+
+  // Merge route params with query params
+  const allParams = { ...routeParams, ...parsed.params };
+
   // Update URL
   if (pushState) {
-    history.pushState({ path }, '', path);
+    history.pushState({ path: pathname, params: parsed.params }, '', path);
   }
-  
+
   // Load and render page
   try {
     const pageModule = await loadPage(page);
-    
+
     // Get page HTML template
-    const html = pageModule.template ? pageModule.template(params) : '';
+    const html = pageModule.template ? pageModule.template(allParams) : '';
     container.innerHTML = html;
-    
-    // Initialize page (returns cleanup function if any)
+
+    // Initialize page with all params (route + query)
     if (pageModule.init) {
-      currentCleanup = await pageModule.init(params) || null;
+      currentCleanup = await pageModule.init(allParams) || null;
     }
-    
+
     // Update document title
     if (pageModule.title) {
-      document.title = typeof pageModule.title === 'function' 
-        ? pageModule.title(params) 
+      document.title = typeof pageModule.title === 'function'
+        ? pageModule.title(allParams)
         : pageModule.title;
     }
-    
+
     // Scroll to top
     window.scrollTo(0, 0);
-    
+
+    // Store current route for debugging/inspection
+    currentRoute = { page, params: allParams };
+
   } catch (err) {
     console.error('Page load error:', err);
     container.innerHTML = '<h1>Error</h1><p>Failed to load page.</p>';
@@ -159,27 +181,27 @@ function handleClick(event) {
   // Find the closest anchor tag
   const anchor = event.target.closest('a');
   if (!anchor) return;
-  
+
   const href = anchor.getAttribute('href');
   if (!href) return;
-  
+
   // Skip external links
   if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('//')) {
     return;
   }
-  
+
   // Skip links with target="_blank"
   if (anchor.target === '_blank') return;
-  
+
   // Skip download links
   if (anchor.hasAttribute('download')) return;
-  
+
   // Skip hash-only links
   if (href.startsWith('#')) return;
-  
+
   // Prevent default and navigate
   event.preventDefault();
-  
+
   // Convert relative URLs to absolute paths
   let path = href;
   if (!path.startsWith('/')) {
@@ -187,7 +209,7 @@ function handleClick(event) {
     const basePath = currentPath.substring(0, currentPath.lastIndexOf('/'));
     path = `${basePath}/${href}`.replace(/\/+/g, '/');
   }
-  
+
   navigate(path);
 }
 
@@ -213,24 +235,43 @@ function handleMouseOver(event) {
 
 // Handle browser back/forward
 function handlePopState(event) {
+  // Reconstruct full path from state and current URL
   const path = event.state?.path || window.location.pathname;
-  navigate(path, false);
+  const search = window.location.search;
+  const fullPath = path + search;
+  navigate(fullPath, false);
+}
+
+// Helper: Build a URL with query params for navigation
+export function buildUrl(pathname, params = {}) {
+  const url = new URL(pathname, window.location.origin);
+  Object.entries(params).forEach(([k, v]) => {
+    if (v != null) url.searchParams.set(k, v);
+  });
+  return url.pathname + url.search;
+}
+
+// Helper: Get current route info
+export function getCurrentRoute() {
+  return currentRoute;
 }
 
 // Initialize router
 export function initRouter() {
   // Listen for clicks on the document
   document.addEventListener('click', handleClick);
-  
+
   // Listen for hover to prefetch asset data
   document.addEventListener('mouseover', handleMouseOver, { passive: true });
-  
+
   // Listen for browser navigation
   window.addEventListener('popstate', handlePopState);
-  
-  // Initial navigation
-  navigate(window.location.pathname, false);
+
+  // Initial navigation with full URL (path + query)
+  const fullPath = window.location.pathname + window.location.search;
+  navigate(fullPath, false);
 }
 
-// Expose navigate globally for onclick handlers etc.
+// Expose navigate and URL builder globally for onclick handlers etc.
 window.spaNavigate = navigate;
+window.spaUrl = buildUrl;
