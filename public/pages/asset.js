@@ -1,6 +1,7 @@
 // Asset detail page
 import { mountGraphView, unmountGraphView } from 'geonodes-web-render/embed';
 import 'geonodes-web-render/dist/embed.css';
+import { supabase } from '/auth.js';
 
 // Asset cache for prefetched data
 const assetCache = new Map();
@@ -174,6 +175,7 @@ export function template(params) {
           <span class="asset-copy-btn__label">Copy TreeClipper Magic String</span>
           <span class="asset-copy-btn__label-copied">Copied!</span>
         </button>
+        <a id="asset-edit-link" class="asset-edit-link" href="/my-assets" hidden title="Edit this asset">✏️ Edit</a>
         <div id="asset-copy-toast" class="asset-copy-toast" role="status" hidden>
           Now, you can use this magic string in Blender with the
           <a href="https://extensions.blender.org/add-ons/tree-clipper/" target="_blank" rel="noopener noreferrer" class="asset-copy-toast__link">Tree Clipper Extension</a>
@@ -212,7 +214,8 @@ function getElements() {
       fullscreenBtn: document.getElementById("node-tree-fullscreen"),
       packedNodeInline: document.getElementById("packed-node-inline"),
       copyBtn: document.getElementById("asset-copy-btn"),
-      copyToast: document.getElementById("asset-copy-toast")
+      copyToast: document.getElementById("asset-copy-toast"),
+      editLink: document.getElementById("asset-edit-link")
     };
   }
   return elements;
@@ -221,6 +224,27 @@ function getElements() {
 // Currently mounted graph payload, so we can re-mount (and re-fit) on resize /
 // fullscreen toggles.
 let mountedPayload = null;
+
+// Current session/user info for ownership checks
+let currentSession = null;
+
+async function checkUserSession() {
+  const { data: { session } } = await supabase.auth.getSession();
+  currentSession = session;
+  return session;
+}
+
+async function handleEditClick(username, slug) {
+  // Store the asset info in sessionStorage so my-assets can retrieve and auto-open the modal
+  sessionStorage.setItem('editAssetAuthor', username);
+  sessionStorage.setItem('editAssetSlug', slug);
+  // Navigate to my-assets page
+  if (window.spaNavigate) {
+    window.spaNavigate('/my-assets');
+  } else {
+    window.location.href = '/my-assets';
+  }
+}
 
 function renderGraph(payload) {
   const els = getElements();
@@ -308,7 +332,7 @@ function handleFullscreenKey(e) {
 export function init(params) {
   // Reset element cache for new page
   elements = null;
-  
+
   const els = getElements();
   mountedPayload = null;
 
@@ -318,6 +342,12 @@ export function init(params) {
   }
   if (els.copyBtn) {
     els.copyBtn.addEventListener('click', copyMagicString);
+  }
+  if (els.editLink) {
+    els.editLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      handleEditClick(params.username, params.slug);
+    });
   }
   document.addEventListener('keydown', handleFullscreenKey);
 
@@ -369,10 +399,13 @@ async function loadAsset(username, slug) {
     els.title.textContent = "No Asset";
     return;
   }
-  
+
   const cacheKey = `${username}/${slug}`;
   const apiUrl = `/api/asset/${encodeURIComponent(username)}/${encodeURIComponent(slug)}`;
-  
+
+  // Check user session for edit button visibility
+  await checkUserSession();
+
   try {
     // Check cache first (from prefetch), otherwise fetch
     let asset;
@@ -382,7 +415,7 @@ async function loadAsset(username, slug) {
       if (!asset) throw new Error("Prefetch failed");
     } else {
       const res = await fetch(apiUrl);
-      
+
       if (!res.ok) {
         if (res.status === 404) {
           els.title.textContent = "Asset Not Found";
@@ -390,8 +423,21 @@ async function loadAsset(username, slug) {
         }
         throw new Error(`HTTP ${res.status}`);
       }
-      
+
       asset = await res.json();
+    }
+
+    // Check if current user is the owner - show edit button if so
+    if (currentSession && asset.author) {
+      const { data: userProfile } = await supabase
+        .from('users')
+        .select('username')
+        .eq('id', currentSession.user.id)
+        .single();
+
+      if (userProfile?.username === asset.author && els.editLink) {
+        els.editLink.hidden = false;
+      }
     }
     
     // Batch DOM updates for better performance

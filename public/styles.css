@@ -968,6 +968,34 @@ a:hover {
     }
 }
 
+/* Edit asset link — appears next to copy button when user is the owner */
+.asset-edit-link {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: #20232b;
+    border: 1px solid #3a3f4b;
+    color: #a3a9b4;
+    font-size: 0.85em;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    text-decoration: none;
+    margin-left: 8px;
+}
+
+.asset-edit-link[hidden] {
+    display: none;
+}
+
+.asset-edit-link:hover {
+    border-color: rgba(100, 200, 255, 0.5);
+    color: #64c8ff;
+}
+
 /* Confirmation toast under the copy button. */
 .asset-copy-toast {
     max-width: 300px;

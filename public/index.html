@@ -31,10 +31,15 @@
     <script type="module">
         import { initLoginCorner } from '/auth.js';
         import { initRouter } from '/router.js';
-        
+        import { initErrorHandlers, initExitHandler } from '/logger.js';
+
+        // Initialize error handlers (catches uncaught errors and unhandled rejections)
+        initErrorHandlers();
+        initExitHandler();
+
         // Initialize login corner once - it persists across page navigations
         initLoginCorner();
-        
+
         // Initialize the SPA router
         initRouter();
     </script>

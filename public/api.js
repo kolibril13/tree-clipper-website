@@ -1,5 +1,6 @@
 // Centralized API client with consistent error handling and auth
 import { supabase } from '/auth.js';
+import { error as logError } from '/logger.js';
 
 class APIError extends Error {
   constructor(message, status, body) {
@@ -67,7 +68,14 @@ async function request(endpoint, options = {}) {
       const message = typeof data === 'object' && data.message
         ? data.message
         : typeof data === 'string' ? data : `HTTP ${res.status}`;
-      throw new APIError(message, res.status, data);
+      const apiError = new APIError(message, res.status, data);
+      logError(`API Error: ${method} ${url} (${res.status})`, {
+        endpoint: url,
+        method,
+        status: res.status,
+        message
+      });
+      throw apiError;
     }
 
     return data;
@@ -75,11 +83,14 @@ async function request(endpoint, options = {}) {
     if (error instanceof APIError) throw error;
 
     // Network error or parse error
-    throw new APIError(
-      error.message || 'Request failed',
-      0,
-      null
-    );
+    const message = error.message || 'Request failed';
+    logError(`API Request Failed: ${method} ${url}`, {
+      endpoint: url,
+      method,
+      message,
+      type: error.name
+    });
+    throw new APIError(message, 0, null);
   }
 }
 

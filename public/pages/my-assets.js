@@ -174,10 +174,10 @@ export async function init() {
     // User was redirected to claim-username page, stop initialization
     return;
   }
-  
+
   const loginPrompt = document.getElementById("login-prompt");
   const pageContent = document.getElementById("page-content");
-  
+
   // Auth state handlers
   function updateAuthUI(user) {
     if (user) {
@@ -189,19 +189,31 @@ export async function init() {
       pageContent.style.display = "none";
     }
   }
-  
+
   const { data: { session } } = await supabase.auth.getSession();
   currentSession = session;
   updateAuthUI(session?.user ?? null);
-  
+
   const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
     currentSession = session;
     updateAuthUI(session?.user ?? null);
   });
-  
+
   // Set up event listeners
   setupEventListeners();
-  
+
+  // Check if we need to auto-open the edit modal (from the asset page)
+  const editAuthor = sessionStorage.getItem('editAssetAuthor');
+  const editSlug = sessionStorage.getItem('editAssetSlug');
+  if (editAuthor && editSlug) {
+    sessionStorage.removeItem('editAssetAuthor');
+    sessionStorage.removeItem('editAssetSlug');
+    // Delay to ensure the DOM is ready and assets are loaded
+    setTimeout(() => {
+      openEditModal(editAuthor, editSlug);
+    }, 100);
+  }
+
   // Return cleanup function
   return () => {
     subscription.unsubscribe();
