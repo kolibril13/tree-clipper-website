@@ -1,6 +1,6 @@
 // Centralized API client with consistent error handling and auth
-import { supabase } from '/auth.js';
-import { error as logError } from '/logger.js';
+import { supabase } from './auth.js';
+import { error as logError } from './logger.js';
 
 class APIError extends Error {
   constructor(message, status, body) {

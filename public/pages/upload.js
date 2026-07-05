@@ -1,6 +1,6 @@
 // Upload asset page
-import { supabase, ensureUsername } from '/auth.js';
-import { users, slugs, entries, APIError } from '/api.js';
+import { supabase, ensureUsername } from '../auth.js';
+import { users, slugs, entries, APIError } from '../api.js';
 import Cropper from 'cropperjs';
 import { mountGraphView, unmountGraphView } from 'geonodes-web-render/embed';
 import 'geonodes-web-render/dist/embed.css';
