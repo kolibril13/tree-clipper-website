@@ -1,4 +1,5 @@
 // Home page - lists all assets with pagination
+import { entries } from '../api.js';
 
 export const title = 'Tree Clipper';
 
@@ -146,23 +147,15 @@ async function loadAssets(isInitialLoad = false) {
   }
   
   try {
-    // Build query params with filters
-    const params = new URLSearchParams({
+    const results = await entries.list({
       limit: PAGE_SIZE,
-      offset: currentOffset
+      offset: currentOffset,
+      node_type: currentFilters.nodeType || null,
+      search: currentFilters.search || null
     });
-    if (currentFilters.nodeType) {
-      params.set('node_type', currentFilters.nodeType);
-    }
-    if (currentFilters.search) {
-      params.set('search', currentFilters.search);
-    }
-    
-    const res = await fetch(`/api/entries?${params}`);
-    const entries = await res.json();
-    
+
     if (isInitialLoad) {
-      if (!entries || entries.length === 0) {
+      if (!results || results.length === 0) {
         const hasFilters = currentFilters.nodeType || currentFilters.search;
         const emptyMessage = hasFilters 
           ? 'No assets found matching your filters. Try adjusting your search or filters.'
@@ -175,11 +168,11 @@ async function loadAssets(isInitialLoad = false) {
     }
     
     // Check if we have more items to load
-    hasMore = entries.length === PAGE_SIZE;
-    currentOffset += entries.length;
-    
+    hasMore = results.length === PAGE_SIZE;
+    currentOffset += results.length;
+
     // Render new entries
-    const newItemsHtml = entries.map(entry => {
+    const newItemsHtml = results.map(entry => {
       const title = entry.title || "Untitled Asset";
       const author = entry.author || "Unknown";
       const imageUrl = entry.image_data;

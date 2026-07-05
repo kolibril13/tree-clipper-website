@@ -1,5 +1,6 @@
 // Settings page
-import { supabase, ensureUsername } from '/auth.js';
+import { supabase, ensureUsername } from '../auth.js';
+import { users } from '../api.js';
 
 export const title = 'Settings – Tree Clipper';
 
@@ -375,17 +376,11 @@ async function loadUserData(user) {
 
   // Load username from our API
   try {
-    const res = await fetch("/api/users/me", {
-      headers: { "Authorization": `Bearer ${currentSession.access_token}` }
-    });
-    
-    if (res.ok) {
-      const profile = await res.json();
-      usernameValue.textContent = profile.username ? `@${profile.username}` : "Not set";
-      
-      if (profile.created_at) {
-        createdAt.textContent = formatDate(profile.created_at);
-      }
+    const profile = await users.getMe();
+    usernameValue.textContent = profile.username ? `@${profile.username}` : "Not set";
+
+    if (profile.created_at) {
+      createdAt.textContent = formatDate(profile.created_at);
     }
   } catch (err) {
     console.error("Failed to load profile:", err);
@@ -404,15 +399,7 @@ async function handleConfirmDelete() {
   confirmDeleteBtn.textContent = "Deleting...";
 
   try {
-    const res = await fetch("/api/users/me", {
-      method: "DELETE",
-      headers: { "Authorization": `Bearer ${currentSession.access_token}` }
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(errorText || "Failed to delete account");
-    }
+    await users.delete();
 
     // Sign out and redirect
     await supabase.auth.signOut();

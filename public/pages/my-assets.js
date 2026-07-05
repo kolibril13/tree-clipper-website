@@ -1,5 +1,6 @@
 // My Assets page
-import { supabase, ensureUsername } from '/auth.js';
+import { supabase, ensureUsername } from '../auth.js';
+import { users, entries, APIError } from '../api.js';
 import Cropper from 'cropperjs';
 
 export const title = 'My Assets – Tree Clipper';
@@ -366,22 +367,14 @@ async function loadMyAssets() {
   assetsList.innerHTML = '<li class="loading-item">Loading your assets...</li>';
 
   try {
-    const res = await fetch("/api/entries?mine=true", {
-      headers: {
-        "Authorization": `Bearer ${currentSession.access_token}`
-      }
-    });
+    const results = await entries.listMine();
 
-    if (!res.ok) throw new Error("Failed to fetch");
-
-    const entries = await res.json();
-
-    if (!entries || entries.length === 0) {
+    if (!results || results.length === 0) {
       assetsList.innerHTML = '<li class="empty-item">You haven\'t uploaded any assets yet.</li>';
       return;
     }
 
-    assetsList.innerHTML = entries.map(entry => {
+    assetsList.innerHTML = results.map(entry => {
       const title = entry.title || "Untitled Asset";
       const imageUrl = entry.image_data;
       const imageHtml = imageUrl 
@@ -442,10 +435,7 @@ async function loadMyAssets() {
 
 async function openEditModal(author, slug) {
   try {
-    const res = await fetch(`/api/asset/${encodeURIComponent(author)}/${encodeURIComponent(slug)}`);
-    if (!res.ok) throw new Error("Asset not found");
-    
-    const asset = await res.json();
+    const asset = await entries.get(author, slug);
     
     document.getElementById("edit-author").value = asset.author;
     document.getElementById("edit-slug").value = asset.slug;
@@ -509,22 +499,10 @@ async function handleRemoveCurrentImage() {
   btn.textContent = "Removing...";
 
   try {
-    const res = await fetch(`/api/entries?author=${encodeURIComponent(author)}&slug=${encodeURIComponent(slug)}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${currentSession.access_token}`
-      },
-      body: JSON.stringify({ imageData: null })
-    });
-
-    if (res.ok) {
-      currentImageUrl = null;
-      document.getElementById("current-image-container").style.display = "none";
-      showStatus("success", "Image removed");
-    } else {
-      showStatus("error", "Failed to remove image");
-    }
+    await entries.update(author, slug, { imageData: null });
+    currentImageUrl = null;
+    document.getElementById("current-image-container").style.display = "none";
+    showStatus("success", "Image removed");
   } catch (err) {
     showStatus("error", "Failed to remove image");
   } finally {
@@ -546,15 +524,17 @@ async function handleEditSubmit(e) {
   let imageUrl = undefined;
 
   if (selectedNewImage) {
-    const profileRes = await fetch("/api/users/me", {
-      headers: { "Authorization": `Bearer ${currentSession.access_token}` }
-    });
-    const profile = await profileRes.json();
+    let profile;
+    try {
+      profile = await users.getMe();
+    } catch {
+      profile = null;
+    }
     if (!profile?.username) {
       showStatus("error", "Please set a username first");
       return;
     }
-    
+
     const filePath = `${profile.username}/asset-${Date.now()}.jpg`;
 
     const { error } = await supabase.storage
@@ -586,24 +566,12 @@ async function handleEditSubmit(e) {
   }
 
   try {
-    const res = await fetch(`/api/entries?author=${encodeURIComponent(author)}&slug=${encodeURIComponent(slug)}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${currentSession.access_token}`
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (res.ok) {
-      showStatus("success", "Asset updated!");
-      closeEditModal();
-      loadMyAssets();
-    } else {
-      showStatus("error", await res.text());
-    }
+    await entries.update(author, slug, payload);
+    showStatus("success", "Asset updated!");
+    closeEditModal();
+    loadMyAssets();
   } catch (err) {
-    showStatus("error", "Failed to update asset");
+    showStatus("error", err instanceof APIError ? err.message : "Failed to update asset");
   }
 }
 
@@ -619,22 +587,12 @@ async function handleConfirmDelete() {
   }
 
   try {
-    const res = await fetch(`/api/entries?author=${encodeURIComponent(deleteAuthor)}&slug=${encodeURIComponent(deleteSlug)}`, {
-      method: "DELETE",
-      headers: {
-        "Authorization": `Bearer ${currentSession.access_token}`
-      }
-    });
-
-    if (res.ok) {
-      showStatus("success", "Asset deleted");
-      closeDeleteModal();
-      loadMyAssets();
-    } else {
-      showStatus("error", await res.text());
-    }
+    await entries.delete(deleteAuthor, deleteSlug);
+    showStatus("success", "Asset deleted");
+    closeDeleteModal();
+    loadMyAssets();
   } catch (err) {
-    showStatus("error", "Failed to delete asset");
+    showStatus("error", err instanceof APIError ? err.message : "Failed to delete asset");
   }
 }
 

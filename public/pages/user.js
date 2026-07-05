@@ -1,4 +1,5 @@
 // User profile page
+import { users, entries, APIError } from '../api.js';
 
 export function title(params) {
   return `@${params.username} - Tree Clipper`;
@@ -30,18 +31,8 @@ export async function init(params) {
 async function loadUserProfile(username) {
   // Fetch user info
   try {
-    const userRes = await fetch(`/api/users/${encodeURIComponent(username)}`);
-    
-    if (!userRes.ok) {
-      if (userRes.status === 404) {
-        showError("User not found");
-        return;
-      }
-      throw new Error(`HTTP ${userRes.status}`);
-    }
-    
-    const user = await userRes.json();
-    
+    const user = await users.getProfile(username);
+
     // Update page title and header
     document.title = `@${user.username} - Tree Clipper`;
     const usernameDisplay = document.getElementById("username-display");
@@ -57,6 +48,10 @@ async function loadUserProfile(username) {
     }
     
   } catch (err) {
+    if (err instanceof APIError && err.status === 404) {
+      showError("User not found");
+      return;
+    }
     console.error("Failed to load user:", err);
     // Still try to load assets even if user info fails
     const usernameDisplay = document.getElementById("username-display");
@@ -64,35 +59,29 @@ async function loadUserProfile(username) {
       usernameDisplay.textContent = `@${username}`;
     }
   }
-  
+
   // Fetch user's assets
   try {
-    const assetsRes = await fetch(`/api/entries?author=${encodeURIComponent(username)}`);
-    
-    if (!assetsRes.ok) {
-      throw new Error(`HTTP ${assetsRes.status}`);
-    }
-    
-    const entries = await assetsRes.json();
+    const results = await entries.listByAuthor(username);
     const listEl = document.getElementById("user-assets-list");
     const statsEl = document.getElementById("user-stats");
     const countEl = document.getElementById("asset-count");
-    
+
     if (!listEl) return;
-    
-    if (!entries || entries.length === 0) {
+
+    if (!results || results.length === 0) {
       listEl.innerHTML = '<li class="empty-item">No assets yet.</li>';
       return;
     }
-    
+
     // Show stats
     if (statsEl) statsEl.style.display = "flex";
     if (countEl) {
-      const assetWord = entries.length === 1 ? 'asset' : 'assets';
-      countEl.textContent = `${entries.length} ${assetWord}`;
+      const assetWord = results.length === 1 ? 'asset' : 'assets';
+      countEl.textContent = `${results.length} ${assetWord}`;
     }
-    
-    listEl.innerHTML = entries.map(entry => {
+
+    listEl.innerHTML = results.map(entry => {
       const title = entry.title || "Untitled Asset";
       const imageUrl = entry.image_data;
       const imageHtml = imageUrl 

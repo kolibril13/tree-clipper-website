@@ -2,6 +2,7 @@
 import { mountGraphView, unmountGraphView } from 'geonodes-web-render/embed';
 import 'geonodes-web-render/dist/embed.css';
 import { getSessionProfile } from '../auth.js';
+import { entries, APIError } from '../api.js';
 
 // Asset cache for prefetched data
 const assetCache = new Map();
@@ -385,15 +386,9 @@ export function init(params) {
 export function prefetch(username, slug) {
   const cacheKey = `${username}/${slug}`;
   if (assetCache.has(cacheKey)) return;
-  
-  const apiUrl = `/api/asset/${encodeURIComponent(username)}/${encodeURIComponent(slug)}`;
-  
-  // Start fetch and cache the promise
-  const fetchPromise = fetch(apiUrl)
-    .then(res => res.ok ? res.json() : null)
-    .catch(() => null);
-  
-  assetCache.set(cacheKey, fetchPromise);
+
+  // Start fetch and cache the promise (resolves to null on any failure)
+  assetCache.set(cacheKey, entries.get(username, slug).catch(() => null));
 }
 
 async function loadAsset(username, slug) {
@@ -405,7 +400,6 @@ async function loadAsset(username, slug) {
   }
 
   const cacheKey = `${username}/${slug}`;
-  const apiUrl = `/api/asset/${encodeURIComponent(username)}/${encodeURIComponent(slug)}`;
 
   // Show the edit link if this asset belongs to the logged-in user.
   // Fire-and-forget so it never delays rendering the asset itself.
@@ -419,17 +413,15 @@ async function loadAsset(username, slug) {
       assetCache.delete(cacheKey); // Clear after use
       if (!asset) throw new Error("Prefetch failed");
     } else {
-      const res = await fetch(apiUrl);
-
-      if (!res.ok) {
-        if (res.status === 404) {
+      try {
+        asset = await entries.get(username, slug);
+      } catch (err) {
+        if (err instanceof APIError && err.status === 404) {
           els.title.textContent = "Asset Not Found";
           return;
         }
-        throw new Error(`HTTP ${res.status}`);
+        throw err;
       }
-
-      asset = await res.json();
     }
 
     // Batch DOM updates for better performance

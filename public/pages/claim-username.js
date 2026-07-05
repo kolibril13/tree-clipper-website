@@ -1,5 +1,6 @@
 // Claim username page
-import { supabase, clearCachedProfile } from '/auth.js';
+import { supabase, clearCachedProfile } from '../auth.js';
+import { users } from '../api.js';
 
 export const title = 'Choose Your Username – Tree Clipper';
 
@@ -164,17 +165,15 @@ export async function init() {
   currentSession = session;
   
   // Check if user already has a username
-  const res = await fetch("/api/users/me", {
-    headers: { "Authorization": `Bearer ${session.access_token}` }
-  });
-  
-  if (res.ok) {
-    const userData = await res.json();
+  try {
+    const userData = await users.getMe();
     if (userData.username) {
       // Already has username, redirect to my assets
       window.spaNavigate('/my-assets');
       return;
     }
+  } catch {
+    // Profile fetch failed — proceed to the claim form
   }
   
   // Set up event listeners
@@ -255,30 +254,15 @@ async function handleSubmit(e) {
   claimBtn.textContent = "Claiming...";
   
   try {
-    const res = await fetch("/api/users/claim", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${currentSession.access_token}`
-      },
-      body: JSON.stringify({ username })
-    });
-    
-    if (res.ok) {
-      showStatus("success", "Username claimed! Redirecting...");
-      // Clear cached profile so the next page fetches the new username
-      clearCachedProfile();
-      setTimeout(() => {
-        window.spaNavigate('/my-assets');
-      }, 1000);
-    } else {
-      const error = await res.text();
-      showStatus("error", error);
-      claimBtn.disabled = false;
-      claimBtn.textContent = "Claim Username";
-    }
+    await users.claim(username);
+    showStatus("success", "Username claimed! Redirecting...");
+    // Clear cached profile so the next page fetches the new username
+    clearCachedProfile();
+    setTimeout(() => {
+      window.spaNavigate('/my-assets');
+    }, 1000);
   } catch (err) {
-    showStatus("error", "Failed to claim username. Please try again.");
+    showStatus("error", err.message || "Failed to claim username. Please try again.");
     claimBtn.disabled = false;
     claimBtn.textContent = "Claim Username";
   }
@@ -308,8 +292,7 @@ function validateUsername(username) {
 
 async function checkAvailability(username) {
   try {
-    const res = await fetch(`/api/users/check?username=${encodeURIComponent(username)}`);
-    const data = await res.json();
+    const data = await users.check(username);
     return data.available;
   } catch {
     return null; // Error checking

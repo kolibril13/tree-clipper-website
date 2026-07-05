@@ -616,8 +616,13 @@ export default {
       
       // Search in title and description using ILIKE (case-insensitive contains)
       // Scales fine up to ~10k rows. For larger datasets, add pg_trgm indexes.
+      // Strip PostgREST filter syntax chars (`,` separates conditions, `()`
+      // group them) so user input can't break out of the or() expression.
       if (searchQuery) {
-        query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+        const sanitized = searchQuery.replace(/[,()]/g, " ").trim().slice(0, 100);
+        if (sanitized) {
+          query = query.or(`title.ilike.%${sanitized}%,description.ilike.%${sanitized}%`);
+        }
       }
       
       // Apply ordering and pagination
