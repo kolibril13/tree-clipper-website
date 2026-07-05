@@ -870,6 +870,152 @@ a:hover {
     margin-bottom: 0;
 }
 
+/* Column holding the meta card with the copy button below it. */
+.asset-meta-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.8em;
+}
+
+.asset-meta-col .asset-meta {
+    flex: none;
+    align-self: stretch;
+}
+
+/* "Copy TreeClipper Magic String" button — sits under the meta card, outside
+   the node-tree frame. Mirrors the embed's gnwr-copy-button styling. */
+.asset-copy-btn {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 14px 6px 9px;
+    border-radius: 8px;
+    background: #20232b;
+    border: 1px solid #3a3f4b;
+    color: #a3a9b4;
+    font-size: 0.85em;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.asset-copy-btn[hidden] {
+    display: none;
+}
+
+.asset-copy-btn:hover {
+    border-color: rgba(192, 132, 252, 0.5);
+    color: #c084fc;
+}
+
+.asset-copy-btn:focus-visible {
+    outline: 2px solid #c084fc;
+    outline-offset: 2px;
+}
+
+.asset-copy-btn__logo {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.asset-copy-btn__check {
+    display: none;
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    color: #c084fc;
+    animation: asset-check-pop 0.25s ease-out;
+}
+
+.asset-copy-btn__label-copied {
+    display: none;
+}
+
+/* Copied state: swap logo→check and label→"Copied!". */
+.asset-copy-btn--copied {
+    border-color: rgba(192, 132, 252, 0.5);
+    color: #c084fc;
+}
+
+.asset-copy-btn--copied .asset-copy-btn__logo,
+.asset-copy-btn--copied .asset-copy-btn__label {
+    display: none;
+}
+
+.asset-copy-btn--copied .asset-copy-btn__check {
+    display: block;
+}
+
+.asset-copy-btn--copied .asset-copy-btn__label-copied {
+    display: inline;
+}
+
+@keyframes asset-check-pop {
+    from {
+        transform: scale(0.4);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Confirmation toast under the copy button. */
+.asset-copy-toast {
+    max-width: 300px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #20232b;
+    border: 1px solid rgba(192, 132, 252, 0.5);
+    color: #a3a9b4;
+    font-size: 0.8em;
+    line-height: 1.4;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    animation: asset-copy-toast-in 0.15s ease-out;
+}
+
+.asset-copy-toast[hidden] {
+    display: none;
+}
+
+.asset-copy-toast__link {
+    color: #c084fc;
+    text-decoration: underline;
+}
+
+.asset-copy-toast__link:hover {
+    text-decoration: none;
+}
+
+.asset-copy-toast--leaving {
+    animation: asset-copy-fade-out 0.5s ease forwards;
+}
+
+@keyframes asset-copy-toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes asset-copy-fade-out {
+    to {
+        opacity: 0;
+    }
+}
+
 /* Asset image container - always visible with fixed square size */
 .asset-img-container {
     flex-shrink: 0;

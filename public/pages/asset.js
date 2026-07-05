@@ -116,6 +116,33 @@ export function title(params) {
   return `Asset - Tree Clipper`;
 }
 
+// Tree Clipper add-on icon, inlined so the copy button matches the one the
+// embed renders (same SVG as geonodes-web-render's TreeClipperLogo).
+function treeClipperLogoSvg(className) {
+  return `
+    <svg viewBox="0 0 256 256" class="${className}" role="img" aria-label="Tree Clipper" xmlns="http://www.w3.org/2000/svg">
+      <rect width="256" height="256" rx="64" fill="#ffffff"/>
+      <g transform="matrix(2.1731124,0,0,2.1731124,32.653222,9.9999992)">
+        <g transform="translate(-2.9743217,-2)">
+          <path fill="#ff7a00" d="M 59.9,62.1 C 59.2,57.9 55.5,55 51.4,55 c -0.5,0 -1,0 -1.5,0.1 -4.7,0.8 -7.8,5.3 -7,9.9 0.7,4.2 4.4,7.1 8.5,7.1 4.1,0 1,0 1.5,-0.1 4.7,-0.8 7.8,-5.3 7,-9.9 z"/>
+          <path fill="#000099" d="M 50.4,96.4 C 52.8,90.6 54.5,83 55,75.2 c -0.5,0.1 -1,0.3 -1.5,0.4 -0.7,0.1 -1.4,0.2 -2.1,0.2 -1.7,0 -3.3,-0.3 -4.8,-1 -0.7,7.7 -2.9,14.5 -5.2,18.9 0,0 -0.1,0 -0.2,0 -9.3,0 -16.9,7.5 -16.9,16.9 H 58 c 0,-5.9 -3.1,-11.2 -7.7,-14.2 z"/>
+        </g>
+        <g transform="translate(-2.9743217,-2)">
+          <path fill="#000099" d="m 20.1,44.4 c -0.7,-4.2 -4.4,-7.1 -8.5,-7.1 -0.6,0 -1,0 -1.5,0.1 -4.7,0.8 -7.8,5.3 -7,9.9 0.7,4.2 4.4,7.1 8.5,7.1 0.10349,0 1,0 1.5,-0.1 4.7,-0.8 7.8,-5.3 7,-9.9 z"/>
+          <path fill="#000099" d="m 40.4,58.4 c -7.5,-1.4 -15,-5.3 -18.1,-8.1 -0.3,0.8 -0.7,1.5 -1.2,2.2 -0.9,1.3 -2,2.3 -3.3,3.1 3.3,3 9,6.7 14.3,8.7 2.2,0.8 4.8,1.6 7.5,2.2 0,-0.3 -0.2,-0.7 -0.2,-1 -0.4,-2.5 0,-5 1,-7.2 z"/>
+        </g>
+        <g transform="translate(-2.9743217,-2)">
+          <path fill="#000099" d="M 52.9,12.1 C 51.9,6.2 46.7,2 40.9,2 c -0.7,0 -1.4,0 -2.1,0.2 -6.7,1.2 -11.1,7.5 -10,14.1 1,5.9 6.2,10.1 12,10.1 0.601361,0 1.4,0 2.1,-0.2 6.7,-1.2 11.1,-7.5 10,-14.1 z"/>
+          <path fill="#000099" d="m 50.4,26.1 c -1.9,1.5 -4.1,2.5 -6.5,3 1.8,2.8 3.1,7.4 4.1,12.5 0.7,3.3 0.9,6.7 0.9,9.9 0.2,0 0.3,0 0.5,0 0.7,-0.1 1.4,-0.2 2.1,-0.2 v 0 c 2.1,0 4.1,0.5 5.9,1.5 0,-10.1 -2.9,-20.4 -7,-26.7 z"/>
+        </g>
+        <g transform="translate(-2.9743217,-2)">
+          <path fill="#000099" d="m 90.6,26.7 c -0.7,-4.2 -4.400023,-7.113594 -8.5,-7.1 -0.658419,0.0022 -1,0 -1.5,0.1 -4.7,0.8 -7.8,5.3 -7,9.9 0.7,4.2 4.4,7.1 8.5,7.1 0.228046,0 1,0 1.5,-0.1 4.7,-0.8 7.8,-5.3 7,-9.9 z"/>
+          <path fill="#000099" d="m 66.6,50.9 c -1.8,1.8 -3.9,3.3 -6,4.6 1.5,1.6 2.5,3.7 2.9,6 0.1,0.7 0.2,1.4 0.2,2 2.5,-1.7 5,-3.7 7.3,-5.9 5.4,-5.3 9.1,-12 10.6,-17.8 -2.5,-0.1 -4.8,-1 -6.6,-2.4 -1.1,4.6 -3.7,9 -8.4,13.5 z"/>
+        </g>
+      </g>
+    </svg>`;
+}
+
 export function template(params) {
   return `
     <a href="/" class="back-button">←</a>
@@ -134,7 +161,25 @@ export function template(params) {
            as it would appear if used inside another node tree (Group Input/
            Output only). Sits inline with the image, no panel chrome. -->
       <div id="packed-node-inline" class="packed-node-inline" hidden></div>
-      <div id="asset-meta" class="asset-meta"></div>
+      <div class="asset-meta-col">
+        <div id="asset-meta" class="asset-meta"></div>
+        <!-- Copy button lives here, outside the node-tree frame below.
+             It always copies the whole tree's magic string. -->
+        <button id="asset-copy-btn" class="asset-copy-btn" type="button" hidden
+                title="Copy the Tree Clipper magic string — paste into Blender with the Tree Clipper add-on">
+          ${treeClipperLogoSvg('asset-copy-btn__logo')}
+          <svg class="asset-copy-btn__check" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="asset-copy-btn__label">Copy TreeClipper Magic String</span>
+          <span class="asset-copy-btn__label-copied">Copied!</span>
+        </button>
+        <div id="asset-copy-toast" class="asset-copy-toast" role="status" hidden>
+          Now, you can use this magic string in Blender with the
+          <a href="https://extensions.blender.org/add-ons/tree-clipper/" target="_blank" rel="noopener noreferrer" class="asset-copy-toast__link">Tree Clipper Extension</a>
+          installed.
+        </div>
+      </div>
     </div>
 
     <!-- Node tree viewer comes last; breaks out wider than the page column on desktop -->
@@ -165,7 +210,9 @@ function getElements() {
       treeSection: document.getElementById("node-tree-section"),
       treeCanvas: document.getElementById("node-tree-canvas"),
       fullscreenBtn: document.getElementById("node-tree-fullscreen"),
-      packedNodeInline: document.getElementById("packed-node-inline")
+      packedNodeInline: document.getElementById("packed-node-inline"),
+      copyBtn: document.getElementById("asset-copy-btn"),
+      copyToast: document.getElementById("asset-copy-toast")
     };
   }
   return elements;
@@ -180,9 +227,43 @@ function renderGraph(payload) {
   if (!els.treeCanvas || !payload) return;
   mountedPayload = payload;
   els.treeCanvas.innerHTML = '';
-  // Read-only viewer: disable node selection so the single copy button
-  // always copies the whole tree (no partial/per-selection copy).
-  mountGraphView(els.treeCanvas, { payload, showCopyButton: true, allowSelection: false });
+  // Read-only viewer: no selection, and the page's own copy button (outside
+  // the frame, under the meta card) copies the whole tree. Only in fullscreen
+  // — where that button is off-screen — show the embed's overlay button.
+  const isFullscreen = els.treeSection?.classList.contains('node-tree-section--fullscreen');
+  mountGraphView(els.treeCanvas, { payload, showCopyButton: !!isFullscreen, allowSelection: false });
+}
+
+// Timers for the copy button's "Copied!" state and toast fade-out.
+let copyResetTimer = null;
+let copyFadeTimer = null;
+
+async function copyMagicString() {
+  const els = getElements();
+  if (!mountedPayload || !els.copyBtn) return;
+  try {
+    await navigator.clipboard.writeText(mountedPayload);
+  } catch (e) {
+    // Clipboard can be blocked (no gesture / insecure context); ignore.
+    return;
+  }
+  if (copyResetTimer) clearTimeout(copyResetTimer);
+  if (copyFadeTimer) clearTimeout(copyFadeTimer);
+  els.copyBtn.classList.add('asset-copy-btn--copied');
+  if (els.copyToast) {
+    els.copyToast.hidden = false;
+    els.copyToast.classList.remove('asset-copy-toast--leaving');
+  }
+  copyResetTimer = setTimeout(() => {
+    els.copyBtn.classList.remove('asset-copy-btn--copied');
+    if (els.copyToast) els.copyToast.classList.add('asset-copy-toast--leaving');
+    copyFadeTimer = setTimeout(() => {
+      if (els.copyToast) {
+        els.copyToast.hidden = true;
+        els.copyToast.classList.remove('asset-copy-toast--leaving');
+      }
+    }, 500);
+  }, 3000);
 }
 
 async function renderPackedNodePreview(rawPayload, title) {
@@ -235,6 +316,9 @@ export function init(params) {
   if (els.fullscreenBtn) {
     els.fullscreenBtn.addEventListener('click', toggleFullscreen);
   }
+  if (els.copyBtn) {
+    els.copyBtn.addEventListener('click', copyMagicString);
+  }
   document.addEventListener('keydown', handleFullscreenKey);
 
   // Start loading asset immediately (don't await - let it render progressively)
@@ -245,6 +329,11 @@ export function init(params) {
     if (els.fullscreenBtn) {
       els.fullscreenBtn.removeEventListener('click', toggleFullscreen);
     }
+    if (els.copyBtn) {
+      els.copyBtn.removeEventListener('click', copyMagicString);
+    }
+    if (copyResetTimer) clearTimeout(copyResetTimer);
+    if (copyFadeTimer) clearTimeout(copyFadeTimer);
     document.removeEventListener('keydown', handleFullscreenKey);
     document.body.classList.remove('node-tree-fullscreen-open');
     if (els.treeCanvas) {
@@ -319,6 +408,7 @@ async function loadAsset(username, slug) {
       els.treeSection.hidden = false;
       renderGraph(asset.asset_data);
       renderPackedNodePreview(asset.asset_data, asset.title || "Untitled Asset");
+      if (els.copyBtn) els.copyBtn.hidden = false;
     }
     
     // Update meta info (author, description, dates)
