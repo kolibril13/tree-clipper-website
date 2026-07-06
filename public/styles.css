@@ -881,9 +881,9 @@ a:hover {
     margin-bottom: 0;
 }
 
-/* Right column is one cohesive card: author / description / dates up top,
-   with the action buttons pinned to the bottom as a footer. Positioned
-   relative so the copy toast can overlay below it without shifting layout. */
+/* Right column is one cohesive card: a header row (author byline + top-right
+   actions), the description, then a dates footer pinned to the bottom.
+   Positioned relative so the copy toast can overlay below it. */
 .asset-meta-col {
     flex: 1;
     min-width: 0;
@@ -892,14 +892,46 @@ a:hover {
     flex-direction: column;
     align-items: stretch;
     background: #20232b;
-    border: 1px dashed #3a3f4b;
+    border: 1px solid #2e323c;
     border-radius: 10px;
     padding: 1em 1.15em;
 }
 
-/* Inside the unified card the meta text drops its own card chrome. */
+/* Header: byline on the left, actions pinned to the top-right so they sit at a
+   fixed spot no matter how long the description below runs. */
+.asset-meta__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1em;
+    margin-bottom: 0.7em;
+}
+
+.asset-meta__byline {
+    color: #a3a9b4;
+    font-size: 0.95em;
+    padding-top: 0.2em;
+}
+
+.asset-meta__byline strong {
+    color: #cbd0d8;
+}
+
+.asset-meta__byline .author-link {
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.asset-meta__byline .author-link:hover {
+    text-decoration: underline;
+}
+
+/* Body fills the remaining card height so the dates footer can pin to the
+   bottom; drops the meta text's own card chrome. */
 .asset-meta-col .asset-meta {
-    flex: none;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     align-self: stretch;
     margin: 0;
     padding: 0;
@@ -908,45 +940,74 @@ a:hover {
     border-radius: 0;
 }
 
-/* Action footer: hero Copy next to owner-only Edit, pinned to the card bottom
-   with a divider above. Hidden until Copy is live so no stray divider shows
-   while the asset loads. Distinct class from the my-assets grid's own
-   `.asset-actions` (which sizes its buttons to 36px icon squares). */
-.asset-detail-actions {
+.asset-meta-col .asset-description {
+    margin: 0;
+    color: #a3a9b4;
+    font-size: 0.95em;
+    line-height: 1.5;
+}
+
+/* Dates + version badge, pinned to the bottom of the card. */
+.asset-meta__footer {
     display: flex;
-    align-items: stretch;
-    flex-wrap: wrap;
-    gap: 0.6em;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75em;
     margin-top: auto;
-    padding-top: 0.9em;
-    border-top: 1px solid #2e323c;
+    padding-top: 1em;
 }
 
-.asset-detail-actions:not(:has(.asset-copy-btn:not([hidden]))) {
-    display: none;
+.asset-meta__footer .date-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    margin: 0;
+    font-size: 0.85em;
+    color: #767d89;
 }
 
-/* "Copy" button — the primary call to action on this page, so it's the one
-   filled, accented element. Copies the whole tree's magic string. */
+.date-info__icon {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
+    opacity: 0.85;
+}
+
+/* Top-right action cluster: primary Copy + owner-only Edit. Relative so the
+   copy toast can drop down anchored to it (right below the Copy button). */
+.asset-detail-actions {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    flex-shrink: 0;
+}
+
+/* "Copy" button — the primary action. The icon is absolutely pinned to a
+   fixed spot on the left and the button has a fixed min-width, so neither the
+   icon nor the neighbouring Edit button ever move when the label swaps between
+   "Copy" and "Copied!". Copies the whole tree's magic string. */
 .asset-copy-btn {
     appearance: none;
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
     white-space: nowrap;
-    gap: 8px;
-    padding: 9px 20px 9px 13px;
-    border-radius: 9px;
-    background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+    box-sizing: border-box;
+    min-width: 110px;
+    padding: 8px 14px 8px 36px;
+    border-radius: 8px;
+    background: #7c3aed;
     border: 1px solid transparent;
     color: #ffffff;
-    font-size: 0.95em;
+    font-size: 0.9em;
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(124, 58, 237, 0.35);
-    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    box-shadow: 0 1px 3px rgba(124, 58, 237, 0.4);
+    transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
 }
 
 .asset-copy-btn[hidden] {
@@ -954,13 +1015,12 @@ a:hover {
 }
 
 .asset-copy-btn:hover {
-    background: linear-gradient(135deg, #9333ea 0%, #6d28d9 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 5px 14px rgba(124, 58, 237, 0.45);
+    background: #6d28d9;
+    box-shadow: 0 3px 10px rgba(124, 58, 237, 0.5);
 }
 
 .asset-copy-btn:active {
-    transform: translateY(0);
+    transform: translateY(1px);
 }
 
 .asset-copy-btn:focus-visible {
@@ -968,18 +1028,29 @@ a:hover {
     outline-offset: 2px;
 }
 
+/* Icon anchored at a fixed left position — never moves regardless of label. */
+.asset-copy-btn__icon {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .asset-copy-btn__logo {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     flex: 0 0 auto;
-    border-radius: 5px;
+    border-radius: 4px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .asset-copy-btn__check {
     display: none;
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     flex: 0 0 auto;
     color: #ffffff;
     animation: asset-check-pop 0.25s ease-out;
@@ -989,16 +1060,16 @@ a:hover {
     display: none;
 }
 
-/* Copied state: swap logo→check and label→"Copied!", and flash green so the
+/* Copied state: swap copy→check and label→"Copied!", and flash green so the
    success reads instantly. */
 .asset-copy-btn--copied {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);
+    background: #10b981;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.45);
 }
 
 .asset-copy-btn--copied:hover {
-    background: linear-gradient(135deg, #059669 0%, #047857 100%);
-    box-shadow: 0 5px 14px rgba(16, 185, 129, 0.45);
+    background: #059669;
+    box-shadow: 0 3px 10px rgba(16, 185, 129, 0.5);
 }
 
 .asset-copy-btn--copied .asset-copy-btn__logo,
@@ -1034,8 +1105,8 @@ a:hover {
     flex: 0 0 auto;
     white-space: nowrap;
     gap: 6px;
-    padding: 9px 16px;
-    border-radius: 9px;
+    padding: 8px 14px;
+    border-radius: 8px;
     background: #20232b;
     border: 1px solid #3a3f4b;
     color: #cbd0d8;
@@ -1047,6 +1118,11 @@ a:hover {
     text-decoration: none;
 }
 
+.asset-edit-link__icon {
+    font-size: 0.95em;
+    line-height: 1;
+}
+
 .asset-edit-link[hidden] {
     display: none;
 }
@@ -1056,15 +1132,16 @@ a:hover {
     color: #64c8ff;
 }
 
-/* Confirmation toast — floats as an overlay just below the meta card
-   (anchored to .asset-meta-col) so showing it never pushes the node-render
-   frame down. Sits above the graph via z-index. */
+/* Confirmation toast — drops down from the action cluster, right-aligned
+   under the Copy button. Absolute (anchored to .asset-detail-actions) so it
+   overlays as a popover and never pushes the layout around. */
 .asset-copy-toast {
     position: absolute;
-    top: calc(100% + 0.55em);
-    left: 0;
+    top: calc(100% + 0.5em);
+    right: 0;
     z-index: 20;
-    max-width: 340px;
+    width: max-content;
+    max-width: 320px;
     padding: 9px 13px;
     border-radius: 8px;
     background: #20232b;

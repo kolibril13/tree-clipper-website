@@ -164,28 +164,36 @@ export function template(params) {
            Output only). Sits inline with the image, no panel chrome. -->
       <div id="packed-node-inline" class="packed-node-inline" hidden></div>
       <div class="asset-meta-col">
+        <!-- Header row: author byline on the left, actions pinned top-right so
+             they stay at a fixed spot regardless of how long the description
+             below runs. Copy always copies the whole tree's magic string. -->
+        <div class="asset-meta__header">
+          <div id="asset-meta-byline" class="asset-meta__byline"></div>
+          <div class="asset-detail-actions">
+            <a id="asset-edit-link" class="asset-edit-link" href="/my-assets" hidden title="Edit this asset">
+              <span class="asset-edit-link__icon" aria-hidden="true">✏️</span>Edit
+            </a>
+            <button id="asset-copy-btn" class="asset-copy-btn" type="button" hidden
+                    title="Copy the Tree Clipper magic string — paste into Blender with the Tree Clipper add-on">
+              <span class="asset-copy-btn__icon">
+                ${treeClipperLogoSvg('asset-copy-btn__logo')}
+                <svg class="asset-copy-btn__check" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span class="asset-copy-btn__label">Copy</span>
+              <span class="asset-copy-btn__label-copied">Copied!</span>
+            </button>
+            <!-- Confirmation toast drops down from the action cluster (top-right),
+                 anchored to it so it appears right under the Copy button. -->
+            <div id="asset-copy-toast" class="asset-copy-toast" role="status" hidden>
+              Now, you can use this magic string in Blender with the
+              <a href="https://extensions.blender.org/add-ons/tree-clipper/" target="_blank" rel="noopener noreferrer" class="asset-copy-toast__link">Tree Clipper Extension</a>
+              installed.
+            </div>
+          </div>
+        </div>
         <div id="asset-meta" class="asset-meta"></div>
-        <!-- Primary action row: Copy (the hero action) sits alongside the
-             owner-only Edit button so they read as one deliberate cluster
-             under the meta card, rather than floating stacked strays.
-             Copy always copies the whole tree's magic string. -->
-        <div class="asset-detail-actions">
-          <button id="asset-copy-btn" class="asset-copy-btn" type="button" hidden
-                  title="Copy the Tree Clipper magic string — paste into Blender with the Tree Clipper add-on">
-            ${treeClipperLogoSvg('asset-copy-btn__logo')}
-            <svg class="asset-copy-btn__check" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span class="asset-copy-btn__label">Copy</span>
-            <span class="asset-copy-btn__label-copied">Copied!</span>
-          </button>
-          <a id="asset-edit-link" class="asset-edit-link" href="/my-assets" hidden title="Edit this asset">✏️ Edit</a>
-        </div>
-        <div id="asset-copy-toast" class="asset-copy-toast" role="status" hidden>
-          Now, you can use this magic string in Blender with the
-          <a href="https://extensions.blender.org/add-ons/tree-clipper/" target="_blank" rel="noopener noreferrer" class="asset-copy-toast__link">Tree Clipper Extension</a>
-          installed.
-        </div>
       </div>
     </div>
 
@@ -210,6 +218,7 @@ function getElements() {
   if (!elements) {
     elements = {
       title: document.getElementById("asset-title"),
+      byline: document.getElementById("asset-meta-byline"),
       meta: document.getElementById("asset-meta"),
       compat: document.getElementById("compat-info"),
       img: document.getElementById("asset-img"),
@@ -454,14 +463,23 @@ async function loadAsset(username, slug) {
     const createdDate = asset.creation_date ? formatDate(asset.creation_date) : null;
     const updatedDate = asset.last_update ? formatDate(asset.last_update) : null;
     
-    let metaHtml = `by <a href="${authorUrl}" class="author-link"><strong>@${escapeHtml(author)}</strong></a>`;
-    if (description) metaHtml += `<br><span class="asset-description">${escapeHtml(description)}</span>`;
+    // Byline lives in the header row (beside the top-right actions).
+    if (els.byline) {
+      els.byline.innerHTML = `by <a href="${authorUrl}" class="author-link"><strong>@${escapeHtml(author)}</strong></a>`;
+    }
+
+    // Body: description, then a footer row with the dates (left) and an
+    // optional version badge (right).
+    let metaHtml = '';
+    if (description) metaHtml += `<p class="asset-description">${escapeHtml(description)}</p>`;
     if (createdDate) {
-      metaHtml += `<br><span class="date-info">Created: ${createdDate}`;
+      metaHtml += `<div class="asset-meta__footer"><span class="date-info">`;
+      metaHtml += `<svg class="date-info__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`;
+      metaHtml += `Created ${createdDate}`;
       if (updatedDate && updatedDate !== createdDate) {
-        metaHtml += ` · Updated: ${updatedDate}`;
+        metaHtml += ` · Updated ${updatedDate}`;
       }
-      metaHtml += `</span>`;
+      metaHtml += `</span></div>`;
     }
     els.meta.innerHTML = metaHtml;
     
