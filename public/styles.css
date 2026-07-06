@@ -866,6 +866,7 @@ a:hover {
 
 .asset-layout {
     display: flex;
+    flex-wrap: wrap;
     gap: 2em;
     /* Stretch so the meta card matches the image height and its footer
        buttons line up with the image baseline instead of floating. */
@@ -883,10 +884,13 @@ a:hover {
 
 /* Right column is one cohesive card: a header row (author byline + top-right
    actions), the description, then a dates footer pinned to the bottom.
-   Positioned relative so the copy toast can overlay below it. */
+   Positioned relative so the copy toast can overlay below it.
+   flex-basis + min-width mean that once it can't keep ~360px beside the
+   image/preview it wraps to a full-width row of its own rather than being
+   crushed. */
 .asset-meta-col {
-    flex: 1;
-    min-width: 0;
+    flex: 1 1 360px;
+    min-width: 360px;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -903,7 +907,8 @@ a:hover {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 1em;
+    flex-wrap: wrap;
+    gap: 0.6em 1em;
     margin-bottom: 0.7em;
 }
 
@@ -1235,6 +1240,12 @@ a:hover {
 @media (max-width: 480px) {
     .asset-layout {
         flex-direction: column;
+    }
+    /* Stacked full-width here — drop the 360px floor so it never overflows
+       the narrow viewport. */
+    .asset-meta-col {
+        flex-basis: auto;
+        min-width: 0;
     }
     .asset-img-container {
         width: 100%;
