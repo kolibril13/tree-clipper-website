@@ -63,9 +63,12 @@ export default defineConfig({
   // Dev server settings
   server: {
     port: 3000,
-    // Proxy API requests to wrangler dev server
+    // Proxy API requests to wrangler dev server.
+    // Regex (leading ^) so it matches the /api/ route namespace only and does
+    // NOT swallow the app's own /api.js module request in dev (that file is
+    // bundled into a hashed chunk in prod, so this conflict is dev-only).
     proxy: {
-      '/api': {
+      '^/api/': {
         target: 'http://localhost:8787',
         changeOrigin: true,
       },

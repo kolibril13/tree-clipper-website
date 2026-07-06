@@ -165,18 +165,22 @@ export function template(params) {
       <div id="packed-node-inline" class="packed-node-inline" hidden></div>
       <div class="asset-meta-col">
         <div id="asset-meta" class="asset-meta"></div>
-        <!-- Copy button lives here, outside the node-tree frame below.
-             It always copies the whole tree's magic string. -->
-        <button id="asset-copy-btn" class="asset-copy-btn" type="button" hidden
-                title="Copy the Tree Clipper magic string — paste into Blender with the Tree Clipper add-on">
-          ${treeClipperLogoSvg('asset-copy-btn__logo')}
-          <svg class="asset-copy-btn__check" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <span class="asset-copy-btn__label">Copy TreeClipper Magic String</span>
-          <span class="asset-copy-btn__label-copied">Copied!</span>
-        </button>
-        <a id="asset-edit-link" class="asset-edit-link" href="/my-assets" hidden title="Edit this asset">✏️ Edit</a>
+        <!-- Primary action row: Copy (the hero action) sits alongside the
+             owner-only Edit button so they read as one deliberate cluster
+             under the meta card, rather than floating stacked strays.
+             Copy always copies the whole tree's magic string. -->
+        <div class="asset-detail-actions">
+          <button id="asset-copy-btn" class="asset-copy-btn" type="button" hidden
+                  title="Copy the Tree Clipper magic string — paste into Blender with the Tree Clipper add-on">
+            ${treeClipperLogoSvg('asset-copy-btn__logo')}
+            <svg class="asset-copy-btn__check" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="asset-copy-btn__label">Copy</span>
+            <span class="asset-copy-btn__label-copied">Copied!</span>
+          </button>
+          <a id="asset-edit-link" class="asset-edit-link" href="/my-assets" hidden title="Edit this asset">✏️ Edit</a>
+        </div>
         <div id="asset-copy-toast" class="asset-copy-toast" role="status" hidden>
           Now, you can use this magic string in Blender with the
           <a href="https://extensions.blender.org/add-ons/tree-clipper/" target="_blank" rel="noopener noreferrer" class="asset-copy-toast__link">Tree Clipper Extension</a>
