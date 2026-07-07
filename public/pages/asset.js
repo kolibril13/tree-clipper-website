@@ -155,6 +155,10 @@ export function template(params) {
     <!-- Compatibility info section -->
     <div id="compat-info" class="asset-tags-detail" style="display: none;"></div>
 
+    <!-- Wrapper is the size container for the cqw-based fluid sizing inside
+         .asset-layout: cqw on the layout's own gap can't resolve against the
+         layout itself, only against an ancestor container. -->
+    <div class="asset-layout-container">
     <div class="asset-layout">
       <div id="asset-img-container" class="asset-img-container">
         <img id="asset-img" src="" class="asset-img" decoding="async">
@@ -195,6 +199,7 @@ export function template(params) {
         </div>
         <div id="asset-meta" class="asset-meta"></div>
       </div>
+    </div>
     </div>
 
     <!-- Node tree viewer comes last; breaks out wider than the page column on desktop -->

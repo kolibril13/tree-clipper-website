@@ -10,8 +10,13 @@ body {
     color: #e6e7ea;
     max-width: 1140px;
     margin: 40px auto;
+    /* Horizontal page padding shrinks fluidly (48px → 24px between ~1000px
+       and ~600px viewports) instead of jumping at a breakpoint. Vertical
+       padding stays constant at every width so nothing (e.g. the back
+       button) shifts up as the window narrows. */
     padding: 2.5em 3em;
     padding-top: 3.5em;
+    padding: 3.5em clamp(24px, 6vw - 12px, 48px) 2.5em;
     border-radius: 12px;
     border: 1px solid #2a2e38;
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45);
@@ -749,6 +754,9 @@ a:hover {
     flex-shrink: 0;
     width: 210px;
     height: 200px;
+    /* Shrinks fluidly with the layout (210→170 wide) before anything wraps. */
+    width: clamp(170px, 21.7cqw + 28.9px, 210px);
+    height: clamp(162px, 20.7cqw + 27.5px, 200px);
     /* Purely decorative: no hover/selection/drag interaction of any kind. */
     pointer-events: none;
 }
@@ -864,10 +872,22 @@ a:hover {
     font-size: 1.05em;
 }
 
+/* The image, packed-node preview and meta card compress continuously as the
+   container narrows (via cqw-based clamps on each piece) so the meta card
+   stays on the same line as long as possible; only once everything is at its
+   floor size (~650px container) does the meta card wrap to its own row.
+   The wrapper (not .asset-layout itself) is the size container because cqw
+   on .asset-layout's own gap would otherwise resolve against the viewport. */
+.asset-layout-container {
+    container-type: inline-size;
+}
+
 .asset-layout {
     display: flex;
     flex-wrap: wrap;
     gap: 2em;
+    /* From 834px container (everything at full size) down to 650px (floor). */
+    gap: clamp(14px, 9.8cqw - 49.7px, 32px);
     /* Stretch so the meta card matches the image height and its footer
        buttons line up with the image baseline instead of floating. */
     align-items: stretch;
@@ -885,12 +905,17 @@ a:hover {
 /* Right column is one cohesive card: a header row (author byline + top-right
    actions), the description, then a dates footer pinned to the bottom.
    Positioned relative so the copy toast can overlay below it.
-   flex-basis + min-width mean that once it can't keep ~360px beside the
-   image/preview it wraps to a full-width row of its own rather than being
-   crushed. */
+   flex-basis + min-width shrink fluidly from 360px down to 300px alongside
+   the image/preview; only below that floor does the card wrap to a
+   full-width row of its own rather than being crushed. */
 .asset-meta-col {
+    /* border-box so the fluid basis/min-width below describe the card's true
+       outer width (padding + border included) — the wrap math depends on it. */
+    box-sizing: border-box;
     flex: 1 1 360px;
-    min-width: 360px;
+    flex-basis: clamp(300px, 32.6cqw + 84.3px, 356px);
+    min-width: 300px;
+    min-width: clamp(300px, 32.6cqw + 84.3px, 356px);
     position: relative;
     display: flex;
     flex-direction: column;
@@ -1192,11 +1217,14 @@ a:hover {
     }
 }
 
-/* Asset image container - always visible with fixed square size */
+/* Asset image container - always visible, square; shrinks fluidly from
+   200px to 150px as the asset-layout container narrows (see .asset-layout) */
 .asset-img-container {
     flex-shrink: 0;
     width: 200px;
     height: 200px;
+    width: clamp(150px, 27.2cqw - 26.8px, 200px);
+    height: clamp(150px, 27.2cqw - 26.8px, 200px);
     border-radius: 8px;
     background: #2e323c;
     display: flex;
@@ -1227,14 +1255,6 @@ a:hover {
 
 .asset-img-container.loaded .asset-img {
     opacity: 1;
-}
-
-/* Tablet / smaller desktop: reduce the wide-page padding */
-@media (max-width: 760px) {
-    body {
-        padding: 1.5em;
-        padding-top: 3em;
-    }
 }
 
 @media (max-width: 480px) {
