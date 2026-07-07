@@ -141,9 +141,47 @@ function normalizeAssetData(raw) {
   return null;
 }
 
+// Edge-cache TTL in seconds for public, read-only responses that are
+// identical for every visitor, or 0 for "don't cache". Auth only changes
+// /api/entries?mine=true, which is excluded; everything else under /api
+// is either public data or handled per-user and excluded here.
+function publicCacheTtl(request, url) {
+  if (request.method !== "GET") return 0;
+  const p = url.pathname;
+
+  if (p.startsWith("/api/asset/")) return 60;
+  if ((p === "/api/entries" || p === "/api/entries/") && url.searchParams.get("mine") !== "true") return 60;
+  if (p.startsWith("/api/users/") && p !== "/api/users/me" && p !== "/api/users/check") return 60;
+  if (p.startsWith("/api") || p.startsWith("/auth/")) return 0;
+
+  // Asset pages (/:username/:slug) hit Supabase to inject per-asset OG tags;
+  // cache the rendered HTML briefly too. Paths with a dot are static files,
+  // which env.ASSETS already handles.
+  const parts = p.split("/").filter(Boolean);
+  if (parts.length === 2 && !parts[0].includes(".") && !parts[1].includes(".")) return 60;
+
+  return 0;
+}
+
+// Drop the cached API response and OG-injected page HTML for one asset so
+// edits and deletes are visible immediately despite the edge cache.
+async function purgeAssetCache(origin, author, slug) {
+  const cache = caches.default;
+  await Promise.all([
+    cache.delete(new Request(`${origin}/api/asset/${encodeURIComponent(author)}/${encodeURIComponent(slug)}`)),
+    cache.delete(new Request(`${origin}/${encodeURIComponent(author)}/${encodeURIComponent(slug)}`)),
+  ]);
+}
+
 export default {
   async fetch(request, env, ctx) {
-    return withSecurityHeaders(
+    const cacheTtl = publicCacheTtl(request, new URL(request.url));
+    if (cacheTtl) {
+      const cached = await caches.default.match(request);
+      if (cached) return cached;
+    }
+
+    const response = withSecurityHeaders(
       await (async () => {
         const url = new URL(request.url);
         const pathParts = url.pathname.split("/").filter(Boolean);
@@ -198,15 +236,22 @@ export default {
           const pageUrl = `${url.origin}/${encodeURIComponent(username)}/${encodeURIComponent(slug)}`;
           
           // Escape HTML entities in meta content
-          const escapeAttr = (str) => str.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, ' ');
-          
+          const escapeAttr = (str) => str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, ' ');
+
+          // twitter:card is required for X/Slack to render a card at all;
+          // Discord also uses it to pick the large-image layout.
           const assetMetaTags = `
-    <!-- Open Graph for asset: ${escapeAttr(title)} -->
+    <!-- Open Graph tags injected per asset -->
     <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Tree Clipper">
     <meta property="og:url" content="${escapeAttr(pageUrl)}">
     <meta property="og:title" content="${escapeAttr(title)}">
     <meta property="og:description" content="${escapeAttr(ogDescription)}">
     ${imageUrl ? `<meta property="og:image" content="${escapeAttr(imageUrl)}">` : ""}
+    <meta name="twitter:card" content="${imageUrl ? "summary_large_image" : "summary"}">
+    <meta name="twitter:title" content="${escapeAttr(title)}">
+    <meta name="twitter:description" content="${escapeAttr(ogDescription)}">
+    ${imageUrl ? `<meta name="twitter:image" content="${escapeAttr(imageUrl)}">` : ""}
 `;
           
           // Replace the placeholder and default OG tags with asset-specific ones
@@ -837,6 +882,8 @@ export default {
         return internalError("entries update", error);
       }
 
+      ctx.waitUntil(purgeAssetCache(url.origin, existing.author, existing.slug));
+
       return new Response("Asset updated ✅", { status: 200 });
     }
 
@@ -890,6 +937,8 @@ export default {
         return internalError("entries delete", error);
       }
 
+      ctx.waitUntil(purgeAssetCache(url.origin, existing.author, existing.slug));
+
       return new Response("Asset deleted ✅", { status: 200 });
     }
 
@@ -901,5 +950,15 @@ export default {
       })(),
       env
     );
+
+    if (cacheTtl && response.status === 200) {
+      // max-age=0 keeps browsers revalidating on every load, so an edit
+      // (which purges the edge entry) is visible immediately; the edge
+      // absorbs the Supabase traffic via s-maxage.
+      response.headers.set("Cache-Control", `public, max-age=0, s-maxage=${cacheTtl}`);
+      ctx.waitUntil(caches.default.put(request, response.clone()));
+    }
+
+    return response;
   }
 };
