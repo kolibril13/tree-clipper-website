@@ -72,8 +72,12 @@ export function template() {
           </div>
 
           <div class="form-group">
-            <label for="edit-asset-data">Asset Data *</label>
+            <div class="label-row">
+              <label for="edit-asset-data">Asset Data *</label>
+              <button type="button" id="toggle-json-view" class="json-toggle-btn">Show as JSON</button>
+            </div>
             <textarea id="edit-asset-data" rows="4" required placeholder="TreeClipper::H4sIALGFY2kC/+1aW2/iOBT..."></textarea>
+            <small style="color: #6b7280; font-size: 0.85em;">Paste a TreeClipper string or raw JSON — JSON is converted to base64 on save</small>
           </div>
 
           <div id="edit-asset-meta" class="asset-meta" style="display: none;">
@@ -163,6 +167,8 @@ let parsedAssetMeta = null;
 let deleteAuthor = null;
 let deleteSlug = null;
 let pendingImageFile = null;
+// 'base64' shows the TreeClipper:: string, 'json' shows the decoded JSON
+let editDataMode = 'base64';
 
 let cropperInstance = null;
 
@@ -236,6 +242,7 @@ function setupEventListeners() {
   handlers.modalOverlayClick = (e) => { if (e.target === editModal) closeEditModal(); };
   handlers.assetDataInput = () => updateEditAssetMeta();
   handlers.formSubmit = handleEditSubmit;
+  handlers.toggleJsonView = handleToggleJsonView;
   
   handlers.removeCurrentImage = handleRemoveCurrentImage;
   handlers.dropzoneClick = () => editImageInput.click();
@@ -305,7 +312,8 @@ function setupEventListeners() {
   editModal.addEventListener("click", handlers.modalOverlayClick);
   editAssetData.addEventListener("input", handlers.assetDataInput);
   editForm.addEventListener("submit", handlers.formSubmit);
-  
+  document.getElementById("toggle-json-view").addEventListener("click", handlers.toggleJsonView);
+
   removeCurrentImageBtn.addEventListener("click", handlers.removeCurrentImage);
   editImageDropzone.addEventListener("click", handlers.dropzoneClick);
   editImageDropzone.addEventListener("dragover", handlers.dropzoneDragover);
@@ -340,7 +348,8 @@ function cleanupEventListeners() {
   editModal?.removeEventListener("click", handlers.modalOverlayClick);
   editAssetData?.removeEventListener("input", handlers.assetDataInput);
   document.getElementById("edit-form")?.removeEventListener("submit", handlers.formSubmit);
-  
+  document.getElementById("toggle-json-view")?.removeEventListener("click", handlers.toggleJsonView);
+
   removeCurrentImageBtn?.removeEventListener("click", handlers.removeCurrentImage);
   editImageDropzone?.removeEventListener("click", handlers.dropzoneClick);
   editImageDropzone?.removeEventListener("dragover", handlers.dropzoneDragover);
@@ -442,7 +451,8 @@ async function openEditModal(author, slug) {
     document.getElementById("edit-title").value = asset.title || "";
     document.getElementById("edit-description").value = asset.description || "";
     document.getElementById("edit-asset-data").value = asset.asset_data || "";
-    
+    setEditDataMode('base64');
+
     currentImageUrl = asset.image_data;
     selectedNewImage = null;
     
@@ -473,7 +483,57 @@ function closeEditModal() {
   document.getElementById("edit-form").reset();
   selectedNewImage = null;
   parsedAssetMeta = null;
+  setEditDataMode('base64');
   document.getElementById("edit-asset-meta").style.display = "none";
+}
+
+function setEditDataMode(mode) {
+  editDataMode = mode;
+  const btn = document.getElementById("toggle-json-view");
+  const textarea = document.getElementById("edit-asset-data");
+  btn.textContent = mode === 'json' ? "Show as Base64" : "Show as JSON";
+  textarea.rows = mode === 'json' ? 14 : 4;
+}
+
+async function handleToggleJsonView() {
+  const textarea = document.getElementById("edit-asset-data");
+  const raw = textarea.value.trim();
+
+  if (editDataMode === 'base64') {
+    if (!raw) {
+      showStatus("error", "No asset data to show");
+      return;
+    }
+    let jsonText;
+    if (looksLikeJson(raw)) {
+      jsonText = raw;
+    } else {
+      try {
+        jsonText = await decodePayloadToJson(raw);
+      } catch (e) {
+        showStatus("error", "Could not decode asset data");
+        return;
+      }
+    }
+    try {
+      textarea.value = JSON.stringify(JSON.parse(jsonText), null, 2);
+    } catch (e) {
+      showStatus("error", "Asset data is not valid JSON");
+      return;
+    }
+    setEditDataMode('json');
+  } else {
+    if (raw && looksLikeJson(raw)) {
+      try {
+        textarea.value = await encodeTreeClipperData(raw);
+      } catch (e) {
+        showStatus("error", "Invalid JSON: " + e.message);
+        return;
+      }
+    }
+    setEditDataMode('base64');
+  }
+  updateEditAssetMeta();
 }
 
 function openDeleteModal(author, slug, title) {
@@ -523,6 +583,17 @@ async function handleEditSubmit(e) {
   const slug = document.getElementById("edit-slug").value;
   let imageUrl = undefined;
 
+  // Pasted/edited JSON is stored in the compressed TreeClipper:: format.
+  let assetData = document.getElementById("edit-asset-data").value.trim();
+  if (looksLikeJson(assetData)) {
+    try {
+      assetData = await encodeTreeClipperData(assetData);
+    } catch (e) {
+      showStatus("error", "Asset data is not valid JSON");
+      return;
+    }
+  }
+
   if (selectedNewImage) {
     let profile;
     try {
@@ -555,7 +626,7 @@ async function handleEditSubmit(e) {
 
   const payload = {
     description: document.getElementById("edit-description").value.trim() || null,
-    assetData: document.getElementById("edit-asset-data").value.trim(),
+    assetData,
     nodeType: parsedAssetMeta?.nodeType || null,
     blenderVersion: parsedAssetMeta?.blenderVersion || null,
     treeclipperVersion: parsedAssetMeta?.treeclipperVersion || null
@@ -709,16 +780,45 @@ function mapBlIdnameToType(blIdname) {
   return mapping[blIdname] || blIdname || 'unknown';
 }
 
-async function decodeTreeClipperData(raw) {
-  if (!raw.startsWith('TreeClipper::')) return null;
+function looksLikeJson(raw) {
+  return raw.startsWith('{');
+}
+
+// Extract the JSON text from a "TreeClipper::<gzip+base64>" string.
+async function decodePayloadToJson(raw) {
+  if (!raw.startsWith('TreeClipper::')) throw new Error("Not a TreeClipper string");
   const parts = raw.split('::');
-  if (parts.length !== 2) return null;
-  
+  if (parts.length !== 2) throw new Error("Malformed TreeClipper string");
+  const bytes = base64ToUint8Array(parts[1]);
+  return ungzip(bytes);
+}
+
+// Compress JSON text into the "TreeClipper::<gzip+base64>" format.
+// Throws if the text is not valid JSON.
+async function encodeTreeClipperData(jsonText) {
+  const minified = JSON.stringify(JSON.parse(jsonText));
+  const cs = new CompressionStream('gzip');
+  const stream = new Blob([minified]).stream().pipeThrough(cs);
+  const buffer = await new Response(stream).arrayBuffer();
+  return 'TreeClipper::' + uint8ArrayToBase64(new Uint8Array(buffer));
+}
+
+function uint8ArrayToBase64(bytes) {
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+// Accepts either a TreeClipper:: string or raw JSON text.
+async function decodeTreeClipperData(raw) {
+  if (!looksLikeJson(raw) && !raw.startsWith('TreeClipper::')) return null;
   try {
-    const bytes = base64ToUint8Array(parts[1]);
-    const json = await ungzip(bytes);
+    const json = looksLikeJson(raw) ? raw : await decodePayloadToJson(raw);
     const obj = JSON.parse(json);
-    
+
     const blenderVersion = obj.blender_version || null;
     const treeclipperVersion = obj.tree_clipper_version || null;
     
