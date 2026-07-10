@@ -78,6 +78,7 @@ export function template() {
             </div>
             <textarea id="edit-asset-data" rows="4" required placeholder="TreeClipper::H4sIALGFY2kC/+1aW2/iOBT..."></textarea>
             <small style="color: #6b7280; font-size: 0.85em;">Paste a TreeClipper string or raw JSON — JSON is converted to base64 on save</small>
+            <div id="edit-data-warning" class="edit-data-warning" style="display: none;">⚠️ This asset data can't be decoded — paste a fresh TreeClipper string from Blender or valid JSON.</div>
           </div>
 
           <div id="edit-asset-meta" class="asset-meta" style="display: none;">
@@ -241,6 +242,16 @@ function setupEventListeners() {
   handlers.cancelEdit = () => closeEditModal();
   handlers.modalOverlayClick = (e) => { if (e.target === editModal) closeEditModal(); };
   handlers.assetDataInput = () => updateEditAssetMeta();
+  // A pasted TreeClipper:: string is always a complete payload — replace the
+  // whole field so it can't merge with the old value into invalid base64.
+  handlers.assetDataPaste = (e) => {
+    const pasted = e.clipboardData?.getData("text")?.trim();
+    if (pasted?.startsWith("TreeClipper::")) {
+      e.preventDefault();
+      editAssetData.value = pasted;
+      updateEditAssetMeta();
+    }
+  };
   handlers.formSubmit = handleEditSubmit;
   handlers.toggleJsonView = handleToggleJsonView;
   
@@ -311,6 +322,7 @@ function setupEventListeners() {
   document.getElementById("cancel-edit").addEventListener("click", handlers.cancelEdit);
   editModal.addEventListener("click", handlers.modalOverlayClick);
   editAssetData.addEventListener("input", handlers.assetDataInput);
+  editAssetData.addEventListener("paste", handlers.assetDataPaste);
   editForm.addEventListener("submit", handlers.formSubmit);
   document.getElementById("toggle-json-view").addEventListener("click", handlers.toggleJsonView);
 
@@ -347,6 +359,7 @@ function cleanupEventListeners() {
   document.getElementById("cancel-edit")?.removeEventListener("click", handlers.cancelEdit);
   editModal?.removeEventListener("click", handlers.modalOverlayClick);
   editAssetData?.removeEventListener("input", handlers.assetDataInput);
+  editAssetData?.removeEventListener("paste", handlers.assetDataPaste);
   document.getElementById("edit-form")?.removeEventListener("submit", handlers.formSubmit);
   document.getElementById("toggle-json-view")?.removeEventListener("click", handlers.toggleJsonView);
 
@@ -485,6 +498,7 @@ function closeEditModal() {
   parsedAssetMeta = null;
   setEditDataMode('base64');
   document.getElementById("edit-asset-meta").style.display = "none";
+  document.getElementById("edit-data-warning").style.display = "none";
 }
 
 function setEditDataMode(mode) {
@@ -511,7 +525,7 @@ async function handleToggleJsonView() {
       try {
         jsonText = await decodePayloadToJson(raw);
       } catch (e) {
-        showStatus("error", "Could not decode asset data");
+        showStatus("error", "Could not decode asset data — copy a fresh TreeClipper string from Blender");
         return;
       }
     }
@@ -590,6 +604,15 @@ async function handleEditSubmit(e) {
       assetData = await encodeTreeClipperData(assetData);
     } catch (e) {
       showStatus("error", "Asset data is not valid JSON");
+      return;
+    }
+  } else if (assetData.startsWith('TreeClipper::')) {
+    // Refuse to store an undecodable string — a truncated or mangled payload
+    // would save fine as base64 but permanently brick the asset page.
+    try {
+      JSON.parse(await decodePayloadToJson(assetData));
+    } catch (e) {
+      showStatus("error", "Asset data can't be decoded — copy a fresh TreeClipper string from Blender");
       return;
     }
   }
@@ -728,16 +751,25 @@ async function updateEditAssetMeta() {
   const editMetaBlenderVersion = document.getElementById("edit-meta-blender-version");
   const editMetaTreeclipperVersion = document.getElementById("edit-meta-treeclipper-version");
   
+  const editDataWarning = document.getElementById("edit-data-warning");
+
   const raw = editAssetData.value.trim();
   if (!raw) {
     editAssetMeta.style.display = "none";
+    editDataWarning.style.display = "none";
     parsedAssetMeta = null;
     return;
   }
-  
+
   const meta = await decodeTreeClipperData(raw);
   parsedAssetMeta = meta;
-  
+
+  // A TreeClipper:: string or JSON that fails to decode would brick the
+  // asset page if saved — surface that instead of failing silently. Plain
+  // base64 (legacy format) isn't decodable here and is fine, so no warning.
+  const shouldDecode = raw.startsWith('TreeClipper::') || looksLikeJson(raw);
+  editDataWarning.style.display = shouldDecode && meta === null ? "" : "none";
+
   if (meta && (meta.nodeType || meta.blenderVersion || meta.treeclipperVersion)) {
     editMetaNodeType.textContent = meta.nodeType ? getNodeTypeLabel(meta.nodeType) : '—';
     editMetaBlenderVersion.textContent = meta.blenderVersion || '—';
@@ -831,7 +863,8 @@ async function decodeTreeClipperData(raw) {
     
     return { blenderVersion, treeclipperVersion, nodeType };
   } catch (e) {
-    console.error("Failed to decode TreeClipper data:", e);
+    // Fires on every keystroke while the data is mid-edit, so no console
+    // logging — the edit modal shows a visible warning instead.
     return null;
   }
 }
