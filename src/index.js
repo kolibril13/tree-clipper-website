@@ -62,7 +62,9 @@ function buildContentSecurityPolicy(env) {
     "script-src 'self'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
-    "font-src 'self' data:",
+    // geonodes-web-render's bundled embed.css pulls the Inter font from
+    // jsdelivr's fontsource CDN at runtime.
+    "font-src 'self' data: https://cdn.jsdelivr.net",
     `connect-src ${Array.from(connectSrc).join(" ")}`,
   ].join("; ");
 }
