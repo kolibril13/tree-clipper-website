@@ -4,8 +4,27 @@ import 'geonodes-web-render/dist/embed.css';
 import { getSessionProfile } from '../auth.js';
 import { entries, APIError } from '../api.js';
 
-// Asset cache for prefetched data
+// Asset cache for prefetched data: cacheKey -> { promise, time }.
+// Entries expire quickly — a prefetch fired on hover minutes ago may predate
+// an edit, and serving it makes a successful save look like it didn't stick.
 const assetCache = new Map();
+const PREFETCH_TTL_MS = 10_000;
+
+function freshPrefetch(cacheKey) {
+  const cached = assetCache.get(cacheKey);
+  if (!cached) return null;
+  if (Date.now() - cached.time > PREFETCH_TTL_MS) {
+    assetCache.delete(cacheKey);
+    return null;
+  }
+  return cached;
+}
+
+// Called after an asset is updated or deleted so a hover-prefetch from
+// before the change can't serve stale data.
+export function invalidatePrefetch(username, slug) {
+  assetCache.delete(`${username}/${slug}`);
+}
 
 const TREECLIPPER_PREFIX = "TreeClipper::";
 
@@ -403,10 +422,13 @@ export function init(params) {
 // Prefetch asset data (called on hover from router)
 export function prefetch(username, slug) {
   const cacheKey = `${username}/${slug}`;
-  if (assetCache.has(cacheKey)) return;
+  if (freshPrefetch(cacheKey)) return;
 
   // Start fetch and cache the promise (resolves to null on any failure)
-  assetCache.set(cacheKey, entries.get(username, slug).catch(() => null));
+  assetCache.set(cacheKey, {
+    promise: entries.get(username, slug).catch(() => null),
+    time: Date.now()
+  });
 }
 
 async function loadAsset(username, slug) {
@@ -426,8 +448,9 @@ async function loadAsset(username, slug) {
   try {
     // Check cache first (from prefetch), otherwise fetch
     let asset;
-    if (assetCache.has(cacheKey)) {
-      asset = await assetCache.get(cacheKey);
+    const cached = freshPrefetch(cacheKey);
+    if (cached) {
+      asset = await cached.promise;
       assetCache.delete(cacheKey); // Clear after use
       if (!asset) throw new Error("Prefetch failed");
     } else {

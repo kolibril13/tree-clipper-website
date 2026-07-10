@@ -574,6 +574,7 @@ async function handleRemoveCurrentImage() {
 
   try {
     await entries.update(author, slug, { imageData: null });
+    invalidateAssetPrefetch(author, slug);
     currentImageUrl = null;
     document.getElementById("current-image-container").style.display = "none";
     showStatus("success", "Image removed");
@@ -661,12 +662,21 @@ async function handleEditSubmit(e) {
 
   try {
     await entries.update(author, slug, payload);
+    invalidateAssetPrefetch(author, slug);
     showStatus("success", "Asset updated!");
     closeEditModal();
     loadMyAssets();
   } catch (err) {
     showStatus("error", err instanceof APIError ? err.message : "Failed to update asset");
   }
+}
+
+// A hover over an asset link prefetches its data (see router.js); after an
+// update or delete that snapshot is stale and must not serve the next view.
+function invalidateAssetPrefetch(author, slug) {
+  import('./asset.js')
+    .then(m => m.invalidatePrefetch?.(author, slug))
+    .catch(() => {});
 }
 
 async function handleConfirmDelete() {
@@ -682,6 +692,7 @@ async function handleConfirmDelete() {
 
   try {
     await entries.delete(deleteAuthor, deleteSlug);
+    invalidateAssetPrefetch(deleteAuthor, deleteSlug);
     showStatus("success", "Asset deleted");
     closeDeleteModal();
     loadMyAssets();
