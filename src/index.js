@@ -149,6 +149,12 @@ function normalizeAssetData(raw) {
 // is either public data or handled per-user and excluded here.
 function publicCacheTtl(request, url) {
   if (request.method !== "GET") return 0;
+
+  // Never edge-cache in local dev: wrangler dev's cache simulation persists
+  // to .wrangler/state and doesn't expire/purge like the real edge, so
+  // cached API responses make local edits look like they didn't save.
+  if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return 0;
+
   const p = url.pathname;
 
   if (p.startsWith("/api/asset/")) return 60;
