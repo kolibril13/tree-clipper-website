@@ -267,6 +267,18 @@ export function getCurrentRoute() {
 
 // Initialize router
 export function initRouter() {
+  // A deploy replaces the hashed chunk files, so a tab opened before the
+  // deploy keeps running stale code and 404s on chunks it hasn't loaded
+  // yet. Reload once to pick up the new version instead of stranding the
+  // tab; the timestamp guard prevents a reload loop if loading stays broken.
+  window.addEventListener('vite:preloadError', (event) => {
+    const lastReload = Number(sessionStorage.getItem('chunk-reload-at') || 0);
+    if (Date.now() - lastReload < 30_000) return;
+    sessionStorage.setItem('chunk-reload-at', String(Date.now()));
+    event.preventDefault();
+    window.location.reload();
+  });
+
   // Listen for clicks on the document
   document.addEventListener('click', handleClick);
 
