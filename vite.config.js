@@ -4,6 +4,12 @@ import { resolve } from 'path';
 export default defineConfig({
   // Source files are in /public, output goes to /dist
   root: 'public',
+
+  // Build stamp, logged at startup so "which version is this tab running?"
+  // is answerable from the console (type __TC_BUILD__).
+  define: {
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString())
+  },
   
   // Static assets (images, etc.) that should be copied as-is to dist
   publicDir: '../static',

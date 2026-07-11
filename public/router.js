@@ -267,6 +267,11 @@ export function getCurrentRoute() {
 
 // Initialize router
 export function initRouter() {
+  // Identify the running build (stale long-lived tabs are a recurring trap).
+  const build = typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : 'dev';
+  window.__TC_BUILD__ = build;
+  console.info('Tree Clipper build:', build);
+
   // A deploy replaces the hashed chunk files, so a tab opened before the
   // deploy keeps running stale code and 404s on chunks it hasn't loaded
   // yet. Reload once to pick up the new version instead of stranding the
