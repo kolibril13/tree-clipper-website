@@ -40,10 +40,14 @@ async function request(endpoint, options = {}) {
     ...customHeaders
   };
 
-  // Build fetch options
+  // Build fetch options. cache: 'no-store' keeps API responses out of the
+  // browser HTTP cache entirely — they're served with max-age=0 anyway, so
+  // caching them buys nothing, and a misbehaving cache (or extension) can
+  // otherwise replay stale data and make saved edits look lost.
   const fetchOptions = {
     method,
-    headers
+    headers,
+    cache: 'no-store'
   };
 
   if (body) {
