@@ -52,68 +52,74 @@ export function template() {
 
     <!-- Edit Modal -->
     <div id="edit-modal" class="modal-overlay" style="display: none;">
-      <div class="modal-content">
+      <div class="modal-content edit-modal-content">
         <button class="modal-close" id="modal-close">×</button>
         <h2>Edit Asset</h2>
         
-        <form id="edit-form" class="asset-form">
+        <form id="edit-form" class="asset-form edit-asset-form">
           <input type="hidden" id="edit-author" />
           <input type="hidden" id="edit-slug" />
-          
-          <div class="form-group">
-            <label>Title</label>
-            <input type="text" id="edit-title" disabled style="background: #f3f4f6; cursor: not-allowed;" />
-            <small style="color: #6b7280; font-size: 0.85em;">Title cannot be changed (used in URL)</small>
-          </div>
 
-          <div class="form-group">
-            <label for="edit-description">Description</label>
-            <textarea id="edit-description" rows="3" placeholder="Brief description"></textarea>
-          </div>
-
-          <div class="form-group">
-            <div class="label-row">
-              <label for="edit-asset-data">Asset Data *</label>
-              <button type="button" id="toggle-json-view" class="json-toggle-btn">Show as JSON</button>
-            </div>
-            <textarea id="edit-asset-data" rows="4" required placeholder="TreeClipper::H4sIALGFY2kC/+1aW2/iOBT..."></textarea>
-            <small style="color: #6b7280; font-size: 0.85em;">Paste a TreeClipper string or raw JSON — JSON is converted to base64 on save</small>
-            <div id="edit-data-warning" class="edit-data-warning" style="display: none;">⚠️ This asset data can't be decoded — paste a fresh TreeClipper string from Blender or valid JSON.</div>
-          </div>
-
-          <div id="edit-asset-meta" class="asset-meta" style="display: none;">
-            <div class="meta-row">
-              <span class="meta-label">Type</span>
-              <span id="edit-meta-node-type" class="meta-value"></span>
-            </div>
-            <div class="meta-row">
-              <span class="meta-label">Blender</span>
-              <span id="edit-meta-blender-version" class="meta-value"></span>
-            </div>
-            <div class="meta-row">
-              <span class="meta-label">TreeClipper</span>
-              <span id="edit-meta-treeclipper-version" class="meta-value"></span>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Preview Image</label>
-            <div class="current-image-preview" id="current-image-container">
-              <img id="current-image" src="" alt="Current preview" />
-              <button type="button" id="remove-current-image" class="remove-image-btn">Remove Image</button>
-            </div>
-            <div class="image-dropzone" id="edit-image-dropzone">
-              <input type="file" id="edit-image-input" accept="image/*" hidden />
-              <div class="dropzone-content">
-                <span class="dropzone-icon">📷</span>
-                <span class="dropzone-text">Click, drag, or paste a new image</span>
+          <div class="edit-form-grid">
+            <div class="edit-form-main">
+              <div class="form-group">
+                <label for="edit-title">Title</label>
+                <input type="text" id="edit-title" disabled style="background: #f3f4f6; cursor: not-allowed;" />
+                <small style="color: #6b7280; font-size: 0.85em;">Title cannot be changed (used in URL)</small>
               </div>
-              <img id="edit-image-preview" class="image-preview" alt="Preview" />
-              <button type="button" id="edit-remove-image" class="remove-image">×</button>
+
+              <div class="form-group">
+                <label for="edit-description">Description</label>
+                <textarea id="edit-description" rows="3" placeholder="Brief description"></textarea>
+              </div>
+
+              <div class="form-group">
+                <div class="label-row">
+                  <label for="edit-asset-data">Asset Data *</label>
+                  <button type="button" id="toggle-json-view" class="json-toggle-btn">Show as JSON</button>
+                </div>
+                <textarea id="edit-asset-data" rows="4" required placeholder="TreeClipper::H4sIALGFY2kC/+1aW2/iOBT..."></textarea>
+                <small style="color: #6b7280; font-size: 0.85em;">Paste a TreeClipper string or raw JSON — JSON is converted to base64 on save</small>
+                <div id="edit-data-warning" class="edit-data-warning" style="display: none;">⚠️ This asset data can't be decoded — paste a fresh TreeClipper string from Blender or valid JSON.</div>
+              </div>
+
+              <div id="edit-asset-meta" class="asset-meta" style="display: none;">
+                <div class="meta-row">
+                  <span class="meta-label">Type</span>
+                  <span id="edit-meta-node-type" class="meta-value"></span>
+                </div>
+                <div class="meta-row">
+                  <span class="meta-label">Blender</span>
+                  <span id="edit-meta-blender-version" class="meta-value"></span>
+                </div>
+                <div class="meta-row">
+                  <span class="meta-label">TreeClipper</span>
+                  <span id="edit-meta-treeclipper-version" class="meta-value"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="edit-form-media">
+              <div class="form-group">
+                <label>Preview Image</label>
+                <div class="current-image-preview" id="current-image-container">
+                  <img id="current-image" src="" alt="Current preview" />
+                  <button type="button" id="remove-current-image" class="remove-image-btn">Remove Image</button>
+                </div>
+                <div class="image-dropzone" id="edit-image-dropzone">
+                  <input type="file" id="edit-image-input" accept="image/*" hidden />
+                  <div class="dropzone-content">
+                    <span class="dropzone-icon">📷</span>
+                    <span class="dropzone-text">Click, drag, or paste a new image</span>
+                  </div>
+                  <img id="edit-image-preview" class="image-preview" alt="Preview" />
+                  <button type="button" id="edit-remove-image" class="remove-image">×</button>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="modal-actions">
+          <div class="modal-actions edit-modal-actions">
             <button type="button" id="cancel-edit" class="btn-secondary">Cancel</button>
             <button type="submit" class="btn-primary">Save Changes</button>
           </div>

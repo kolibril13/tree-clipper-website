@@ -2132,6 +2132,66 @@ a:hover {
     gap: 1em;
 }
 
+.edit-modal-content {
+    box-sizing: border-box;
+    max-width: 920px;
+    max-height: min(90vh, calc(100dvh - 2em));
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.edit-modal-content h2 {
+    flex: 0 0 auto;
+    padding-right: 2.5em;
+}
+
+.edit-modal-content .edit-asset-form {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-width: none;
+    gap: 0;
+}
+
+.edit-form-grid {
+    min-height: 0;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(260px, 2fr);
+    gap: 1.5em;
+    align-items: start;
+    padding-right: 0.35em;
+}
+
+.edit-form-main,
+.edit-form-media {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    min-width: 0;
+}
+
+.edit-form-media {
+    align-self: stretch;
+    padding-left: 1.5em;
+    border-left: 1px solid #2e323c;
+}
+
+.edit-modal-content .edit-form-main .asset-meta {
+    margin: 0;
+}
+
+.edit-modal-actions {
+    flex: 0 0 auto;
+    margin: 1.25em 0 0;
+    padding-top: 1em;
+    border-top: 1px solid #2e323c;
+}
+
+#edit-form .edit-modal-actions button[type="submit"] {
+    margin-top: 0;
+}
+
 .modal-content .form-group textarea {
     min-height: 60px;
 }
@@ -2147,6 +2207,30 @@ a:hover {
 
 .modal-content .dropzone-text {
     font-size: 0.85em;
+}
+
+@media (max-width: 820px) {
+    .edit-modal-content {
+        max-width: 600px;
+    }
+
+    .edit-form-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1em;
+    }
+
+    .edit-form-media {
+        padding-top: 1em;
+        padding-left: 0;
+        border-top: 1px solid #2e323c;
+        border-left: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .edit-modal-actions .btn-primary {
+        flex: 1;
+    }
 }
 
 /* Asset metadata display (upload/edit forms) */
@@ -2466,4 +2550,3 @@ a:hover {
 body.node-tree-fullscreen-open {
     overflow: hidden;
 }
-
