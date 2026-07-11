@@ -961,13 +961,6 @@ export default {
       ctx.waitUntil(caches.default.put(request, response.clone()));
     }
 
-    // Vite content-hashes everything under /assets/, so those files never
-    // change in place — cache them forever instead of revalidating each load.
-    if (request.method === "GET" && response.status === 200 &&
-        new URL(request.url).pathname.startsWith("/assets/")) {
-      response.headers.set("Cache-Control", "public, max-age=31536000, immutable");
-    }
-
     return response;
   }
 };
