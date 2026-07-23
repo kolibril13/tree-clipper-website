@@ -1648,6 +1648,9 @@ a:hover {
     width: auto;
     margin: 0;
     flex-shrink: 0;
+    background: #fff;
+    border-radius: 12px;
+    padding: 8px;
 }
 
 .logo-credit-by {
