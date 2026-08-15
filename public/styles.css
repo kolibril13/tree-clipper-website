@@ -736,6 +736,7 @@ a:hover {
 .asset-meta .asset-description {
     display: block;
     margin-top: 0.4em;
+    overflow-wrap: anywhere;
 }
 
 .asset-meta .date-info {

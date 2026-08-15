@@ -499,7 +499,7 @@ async function loadAsset(username, slug) {
     // Body: description, then a footer row with the dates (left) and an
     // optional version badge (right).
     let metaHtml = '';
-    if (description) metaHtml += `<p class="asset-description">${escapeHtml(description)}</p>`;
+    if (description) metaHtml += `<p class="asset-description">${linkify(description)}</p>`;
     if (createdDate) {
       metaHtml += `<div class="asset-meta__footer"><span class="date-info">`;
       metaHtml += `<svg class="date-info__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`;
@@ -558,6 +558,27 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+// Escapes the text, then turns bare URLs into clickable links. Runs on the
+// already-escaped string since URLs don't contain characters HTML-escaping
+// would touch, so the anchor markup can't be reopened by user input.
+function linkify(text) {
+  const escaped = escapeHtml(text);
+  const urlRegex = /(https?:\/\/[^\s<]+)/g;
+  return escaped.replace(urlRegex, (url) => {
+    // Trim trailing punctuation that's more likely to be sentence
+    // punctuation than part of the URL (e.g. "...node.html#foo to tell").
+    let trimmed = url;
+    let trailing = '';
+    const trailingPunctuation = /[).,;:!?]+$/;
+    const match = trimmed.match(trailingPunctuation);
+    if (match) {
+      trailing = match[0];
+      trimmed = trimmed.slice(0, -trailing.length);
+    }
+    return `<a href="${trimmed}" target="_blank" rel="noopener noreferrer">${trimmed}</a>${trailing}`;
+  });
 }
 
 function formatDate(isoString) {
