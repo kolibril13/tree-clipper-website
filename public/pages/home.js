@@ -1,10 +1,11 @@
-// Home page - lists all assets with pagination
+// Home page - lists all assets with infinite scroll
 import { entries } from '../api.js';
 import { copyButtonInnerHtml, writeClipboardText } from '../copy-button.js';
 
 export const title = 'Tree Clipper';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 12; // multiple of the 4-column grid
+
 let currentOffset = 0;
 let hasMore = true;
 let isLoading = false;
@@ -12,6 +13,8 @@ let currentFilters = {
   nodeType: '',
   search: ''
 };
+// Watches the load-more sentinel so the next page loads as it scrolls into view.
+let scrollObserver = null;
 
 export function template() {
   return `
@@ -38,6 +41,8 @@ export function template() {
       <li class="loading-item">Loading assets...</li>
     </ul>
     
+    <!-- Sentinel for infinite scroll; the button is a fallback for
+         browsers without IntersectionObserver (and for keyboard users). -->
     <div id="load-more-container" class="load-more-container" style="display: none;">
       <button id="load-more-btn" class="load-more-btn">Load More</button>
     </div>
@@ -72,6 +77,8 @@ export async function init() {
   if (loadMoreBtn) {
     loadMoreBtn.addEventListener("click", () => loadAssets(false));
   }
+
+  setupInfiniteScroll();
   
   // Set up filter buttons
   const filterBtns = document.querySelectorAll(".filter-btn");
@@ -107,6 +114,31 @@ export async function init() {
         resetAndReload();
       }
     });
+  }
+}
+
+// Loads the next page whenever the sentinel below the grid scrolls into
+// view. The root margin starts the fetch one viewport early so the user
+// rarely sees the "Loading..." state.
+function setupInfiniteScroll() {
+  const sentinel = document.getElementById("load-more-container");
+  if (!sentinel || typeof IntersectionObserver === "undefined") return;
+
+  if (scrollObserver) scrollObserver.disconnect();
+  scrollObserver = new IntersectionObserver((entries) => {
+    if (entries.some((entry) => entry.isIntersecting)) loadAssets(false);
+  }, { rootMargin: "0px 0px 100% 0px" });
+  scrollObserver.observe(sentinel);
+}
+
+// After a page is appended the sentinel may still be inside the observer's
+// margin (tall viewport, few results); the observer only fires on changes,
+// so check once more by hand.
+function loadNextPageIfSentinelVisible() {
+  const sentinel = document.getElementById("load-more-container");
+  if (!sentinel || !hasMore || sentinel.style.display === "none") return;
+  if (sentinel.getBoundingClientRect().top <= window.innerHeight * 2) {
+    loadAssets(false);
   }
 }
 
@@ -183,6 +215,7 @@ async function loadAssets(isInitialLoad = false) {
   if (!listEl) return;
   
   isLoading = true;
+  let loadedOk = false;
   
   if (loadMoreBtn) {
     loadMoreBtn.textContent = "Loading...";
@@ -270,6 +303,7 @@ async function loadAssets(isInitialLoad = false) {
     if (loadMoreContainer) {
       loadMoreContainer.style.display = hasMore ? 'flex' : 'none';
     }
+    loadedOk = true;
     
   } catch (err) {
     console.error("Failed to load assets:", err);
@@ -282,6 +316,8 @@ async function loadAssets(isInitialLoad = false) {
       loadMoreBtn.textContent = "Load More";
       loadMoreBtn.disabled = false;
     }
+    // Only chain on success so a failing request doesn't retry in a loop.
+    if (loadedOk && scrollObserver) loadNextPageIfSentinelVisible();
   }
 }
 
