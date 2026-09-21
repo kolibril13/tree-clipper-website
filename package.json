@@ -12,18 +12,18 @@
     "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^4.1.10",
-    "@vitest/ui": "^4.1.10",
-    "happy-dom": "^20.11.2",
-    "vite": "^8.2.1",
-    "vitest": "^4.1.10",
-    "wrangler": "^4.123.0"
+    "@vitest/coverage-v8": "^5.0.1",
+    "@vitest/ui": "^5.0.1",
+    "happy-dom": "^20.14.5",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1",
+    "wrangler": "^4.135.0"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.112.3",
-    "cropperjs": "^2.1.1",
+    "@supabase/supabase-js": "^2.116.0",
+    "cropperjs": "^2.2.0",
     "geonodes-web-render": "^0.3.38",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   }
 }

@@ -23,10 +23,10 @@ global.document = {
   removeEventListener: vi.fn()
 };
 
-global.history = {
+vi.stubGlobal('history', {
   pushState: vi.fn(),
   replaceState: vi.fn()
-};
+});
 
 describe('Router', () => {
   describe('URL parsing', () => {
