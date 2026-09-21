@@ -1,5 +1,6 @@
 // Home page - lists all assets with pagination
 import { entries } from '../api.js';
+import { copyButtonInnerHtml, writeClipboardText } from '../copy-button.js';
 
 export const title = 'Tree Clipper';
 
@@ -56,6 +57,16 @@ export async function init() {
   
   await loadAssets(true);
   
+  // Copy buttons are re-rendered on every reload / "Load More", so handle
+  // them by delegation on the list instead of binding each one.
+  const listEl = document.getElementById("assets-list");
+  if (listEl) {
+    listEl.addEventListener("click", (e) => {
+      const btn = e.target.closest(".asset-card-copy");
+      if (btn) copyFromCard(btn);
+    });
+  }
+  
   // Set up load more button
   const loadMoreBtn = document.getElementById("load-more-btn");
   if (loadMoreBtn) {
@@ -97,6 +108,38 @@ export async function init() {
       }
     });
   }
+}
+
+// Pending "Copied!"/"Failed" reset timers, per button.
+const copyResetTimers = new WeakMap();
+
+// The gallery list omits asset_data (it's the bulk of each row), so copying
+// fetches the single asset on demand. The fetch promise goes straight to the
+// clipboard so the click gesture stays valid in Safari.
+async function copyFromCard(btn) {
+  const { author, slug } = btn.dataset;
+  if (!author || !slug || btn.classList.contains("asset-copy-btn--busy")) return;
+
+  btn.classList.add("asset-copy-btn--busy");
+  btn.classList.remove("asset-copy-btn--copied", "asset-copy-btn--failed");
+  clearTimeout(copyResetTimers.get(btn));
+
+  const magicString = entries.get(author, slug).then((asset) => {
+    if (!asset?.asset_data) throw new Error("Asset has no data");
+    return asset.asset_data;
+  });
+
+  let state = "asset-copy-btn--copied";
+  try {
+    await writeClipboardText(magicString);
+  } catch (err) {
+    console.error("Failed to copy asset:", err);
+    state = "asset-copy-btn--failed";
+  }
+
+  btn.classList.remove("asset-copy-btn--busy");
+  btn.classList.add(state);
+  copyResetTimers.set(btn, setTimeout(() => btn.classList.remove(state), 2500));
 }
 
 function resetAndReload() {
@@ -198,6 +241,9 @@ async function loadAssets(isInitialLoad = false) {
       
       const assetUrl = `/${encodeURIComponent(author)}/${encodeURIComponent(entry.slug)}`;
       
+      // The copy button sits beside the link (not inside it — nested
+      // interactive content would also trigger navigation) and is pinned
+      // over the card's bottom-right corner by CSS.
       return `
         <li>
           <a href="${assetUrl}">
@@ -208,6 +254,12 @@ async function loadAssets(isInitialLoad = false) {
               ${tagsHtml}
             </div>
           </a>
+          <button class="asset-copy-btn asset-copy-btn--compact asset-card-copy" type="button"
+                  data-author="${escapeHtml(author)}" data-slug="${escapeHtml(entry.slug)}"
+                  title="Copy the Tree Clipper magic string — paste into Blender with the Tree Clipper add-on"
+                  aria-label="Copy ${escapeHtml(title)}">
+            ${copyButtonInnerHtml()}
+          </button>
         </li>
       `;
     }).join('');

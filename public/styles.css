@@ -512,6 +512,7 @@ a:hover {
 }
 
 .assets-list li {
+    position: relative; /* anchors the card's Copy button */
     border: 1px solid #2e323c;
     border-radius: 10px;
     background: #20232b;
@@ -562,8 +563,18 @@ a:hover {
     justify-content: flex-start;
     gap: 0.3em;
     min-width: 0;
-    padding: 0.9em 1.1em 1.1em;
+    /* Right padding reserves room for the Copy button pinned over the
+       card's bottom-right corner so tags never run underneath it. */
+    padding: 0.9em 6.5em 1.1em 1.1em;
     flex: 1;
+}
+
+/* Per-card Copy button: a sibling of the card link (clicking it must not
+   navigate), pinned over the info block's bottom-right corner. */
+.assets-list .asset-card-copy {
+    position: absolute;
+    right: 0.9em;
+    bottom: 1em;
 }
 
 .assets-list .asset-title {
@@ -1087,8 +1098,54 @@ a:hover {
     animation: asset-check-pop 0.25s ease-out;
 }
 
-.asset-copy-btn__label-copied {
+.asset-copy-btn__label-copied,
+.asset-copy-btn__label-failed {
     display: none;
+}
+
+/* Smaller variant for gallery cards. */
+.asset-copy-btn--compact {
+    min-width: 84px;
+    padding: 6px 10px 6px 30px;
+    font-size: 0.8em;
+}
+
+.asset-copy-btn--compact .asset-copy-btn__icon {
+    left: 10px;
+}
+
+.asset-copy-btn--compact .asset-copy-btn__logo {
+    width: 15px;
+    height: 15px;
+}
+
+.asset-copy-btn--compact .asset-copy-btn__check {
+    width: 14px;
+    height: 14px;
+}
+
+/* Busy: the asset is still being fetched for the clipboard. */
+.asset-copy-btn--busy {
+    cursor: progress;
+    opacity: 0.75;
+}
+
+/* Failed state: fetch or clipboard write was refused. */
+.asset-copy-btn--failed {
+    background: #dc2626;
+    box-shadow: 0 1px 3px rgba(220, 38, 38, 0.45);
+}
+
+.asset-copy-btn--failed:hover {
+    background: #b91c1c;
+}
+
+.asset-copy-btn--failed .asset-copy-btn__label {
+    display: none;
+}
+
+.asset-copy-btn--failed .asset-copy-btn__label-failed {
+    display: inline;
 }
 
 /* Copied state: swap copy→check and label→"Copied!", and flash green so the
@@ -1280,7 +1337,7 @@ a:hover {
     }
 
     .assets-list .asset-info {
-        padding: 0.8em 1em;
+        padding: 0.8em 6.5em 1em 1em;
     }
 }
 

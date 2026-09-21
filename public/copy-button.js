@@ -1,0 +1,67 @@
+// Shared pieces of the "Copy" (magic string) button, used by the asset page
+// and the gallery cards. Kept free of geonodes-web-render so the home page
+// chunk doesn't drag the graph renderer in.
+
+// Tree Clipper add-on icon, inlined so the copy button matches the one the
+// embed renders (same SVG as geonodes-web-render's TreeClipperLogo).
+export function treeClipperLogoSvg(className) {
+  return `
+    <svg viewBox="0 0 256 256" class="${className}" role="img" aria-label="Tree Clipper" xmlns="http://www.w3.org/2000/svg">
+      <rect width="256" height="256" rx="64" fill="#ffffff"/>
+      <g transform="matrix(2.1731124,0,0,2.1731124,32.653222,9.9999992)">
+        <g transform="translate(-2.9743217,-2)">
+          <path fill="#ff7a00" d="M 59.9,62.1 C 59.2,57.9 55.5,55 51.4,55 c -0.5,0 -1,0 -1.5,0.1 -4.7,0.8 -7.8,5.3 -7,9.9 0.7,4.2 4.4,7.1 8.5,7.1 4.1,0 1,0 1.5,-0.1 4.7,-0.8 7.8,-5.3 7,-9.9 z"/>
+          <path fill="#000099" d="M 50.4,96.4 C 52.8,90.6 54.5,83 55,75.2 c -0.5,0.1 -1,0.3 -1.5,0.4 -0.7,0.1 -1.4,0.2 -2.1,0.2 -1.7,0 -3.3,-0.3 -4.8,-1 -0.7,7.7 -2.9,14.5 -5.2,18.9 0,0 -0.1,0 -0.2,0 -9.3,0 -16.9,7.5 -16.9,16.9 H 58 c 0,-5.9 -3.1,-11.2 -7.7,-14.2 z"/>
+        </g>
+        <g transform="translate(-2.9743217,-2)">
+          <path fill="#000099" d="m 20.1,44.4 c -0.7,-4.2 -4.4,-7.1 -8.5,-7.1 -0.6,0 -1,0 -1.5,0.1 -4.7,0.8 -7.8,5.3 -7,9.9 0.7,4.2 4.4,7.1 8.5,7.1 0.10349,0 1,0 1.5,-0.1 4.7,-0.8 7.8,-5.3 7,-9.9 z"/>
+          <path fill="#000099" d="m 40.4,58.4 c -7.5,-1.4 -15,-5.3 -18.1,-8.1 -0.3,0.8 -0.7,1.5 -1.2,2.2 -0.9,1.3 -2,2.3 -3.3,3.1 3.3,3 9,6.7 14.3,8.7 2.2,0.8 4.8,1.6 7.5,2.2 0,-0.3 -0.2,-0.7 -0.2,-1 -0.4,-2.5 0,-5 1,-7.2 z"/>
+        </g>
+        <g transform="translate(-2.9743217,-2)">
+          <path fill="#000099" d="M 52.9,12.1 C 51.9,6.2 46.7,2 40.9,2 c -0.7,0 -1.4,0 -2.1,0.2 -6.7,1.2 -11.1,7.5 -10,14.1 1,5.9 6.2,10.1 12,10.1 0.601361,0 1.4,0 2.1,-0.2 6.7,-1.2 11.1,-7.5 10,-14.1 z"/>
+          <path fill="#000099" d="m 50.4,26.1 c -1.9,1.5 -4.1,2.5 -6.5,3 1.8,2.8 3.1,7.4 4.1,12.5 0.7,3.3 0.9,6.7 0.9,9.9 0.2,0 0.3,0 0.5,0 0.7,-0.1 1.4,-0.2 2.1,-0.2 v 0 c 2.1,0 4.1,0.5 5.9,1.5 0,-10.1 -2.9,-20.4 -7,-26.7 z"/>
+        </g>
+        <g transform="translate(-2.9743217,-2)">
+          <path fill="#000099" d="m 90.6,26.7 c -0.7,-4.2 -4.400023,-7.113594 -8.5,-7.1 -0.658419,0.0022 -1,0 -1.5,0.1 -4.7,0.8 -7.8,5.3 -7,9.9 0.7,4.2 4.4,7.1 8.5,7.1 0.228046,0 1,0 1.5,-0.1 4.7,-0.8 7.8,-5.3 7,-9.9 z"/>
+          <path fill="#000099" d="m 66.6,50.9 c -1.8,1.8 -3.9,3.3 -6,4.6 1.5,1.6 2.5,3.7 2.9,6 0.1,0.7 0.2,1.4 0.2,2 2.5,-1.7 5,-3.7 7.3,-5.9 5.4,-5.3 9.1,-12 10.6,-17.8 -2.5,-0.1 -4.8,-1 -6.6,-2.4 -1.1,4.6 -3.7,9 -8.4,13.5 z"/>
+        </g>
+      </g>
+    </svg>`;
+}
+
+// Inner markup of an .asset-copy-btn: logo/check icon plus the two labels
+// that CSS swaps between the idle and "Copied!" states.
+export function copyButtonInnerHtml() {
+  return `
+    <span class="asset-copy-btn__icon">
+      ${treeClipperLogoSvg('asset-copy-btn__logo')}
+      <svg class="asset-copy-btn__check" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </span>
+    <span class="asset-copy-btn__label">Copy</span>
+    <span class="asset-copy-btn__label-copied">Copied!</span>
+    <span class="asset-copy-btn__label-failed">Failed</span>`;
+}
+
+// Write text to the clipboard where the text may still be loading. Safari
+// only honours clipboard writes made synchronously inside the click gesture,
+// so a plain "await fetch, then writeText" silently fails there; handing the
+// clipboard a ClipboardItem backed by a promise keeps the gesture alive.
+// Browsers without ClipboardItem fall back to awaiting the text first, which
+// works everywhere else. Rejects if the text fails to load or the write is
+// refused.
+export async function writeClipboardText(textOrPromise) {
+  if (typeof textOrPromise === 'string') {
+    await navigator.clipboard.writeText(textOrPromise);
+    return;
+  }
+  if (typeof ClipboardItem !== 'undefined' && navigator.clipboard.write) {
+    const blob = Promise.resolve(textOrPromise).then(
+      (text) => new Blob([text], { type: 'text/plain' })
+    );
+    await navigator.clipboard.write([new ClipboardItem({ 'text/plain': blob })]);
+    return;
+  }
+  await navigator.clipboard.writeText(await textOrPromise);
+}
