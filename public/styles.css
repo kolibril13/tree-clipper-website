@@ -570,28 +570,39 @@ a:hover {
 }
 
 /* Per-card Copy button: a sibling of the card link (clicking it must not
-   navigate), pinned over the info block's bottom-right corner. Toned down
-   to a ghost button so the thumbnail and title stay the focus; it regains
-   the accent colour on hover, and the copied/failed states still flash. */
+   navigate), pinned over the info block's bottom-right corner. Monochrome
+   ghost button so the thumbnail and title stay the focus; brightens on
+   hover, and the copied/failed states still flash green/red. */
 .assets-list .asset-card-copy {
     position: absolute;
     right: 0.75em;
     bottom: 0.8em;
-    background: rgba(124, 58, 237, 0.12);
-    border-color: rgba(124, 58, 237, 0.35);
-    color: #c4b5fd;
+    background: rgba(255, 255, 255, 0.06);
+    border-color: #3a3f4a;
+    color: #c8ccd4;
     box-shadow: none;
 }
 
 .assets-list .asset-card-copy:hover {
-    background: #7c3aed;
-    border-color: transparent;
+    background: rgba(255, 255, 255, 0.14);
+    border-color: #555b68;
     color: #ffffff;
-    box-shadow: 0 3px 10px rgba(124, 58, 237, 0.45);
+    box-shadow: none;
 }
 
+.assets-list .asset-card-copy:focus-visible {
+    outline-color: #a3a9b4;
+}
+
+/* Desaturate the add-on logo so it doesn't reintroduce colour. */
 .assets-list .asset-card-copy .asset-copy-btn__logo {
     box-shadow: none;
+    filter: grayscale(1);
+    opacity: 0.85;
+}
+
+.assets-list .asset-card-copy:hover .asset-copy-btn__logo {
+    opacity: 1;
 }
 
 .assets-list .asset-card-copy.asset-copy-btn--copied,
